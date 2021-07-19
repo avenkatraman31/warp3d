@@ -2117,16 +2117,15 @@ c ----------------------------------------------------------------------
       type(crystal_props) :: props
       double precision :: tau_tilde(size_num_hard)
       double precision, dimension(max_uhard) :: uhist
+                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
+                tau_tilde(4:6) = props%cp_006
 c
-      if( props%s_type .eq. 10 .and. props%nslip .eq. 18) then
-                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
-                tau_tilde(4:6) = props%cp_006
+      if( props%s_type .eq. 10 ) then
+
                 tau_tilde(7:18) = props%cp_007
-      elseif( props%s_type .eq. 10 .and. props%nslip .eq. 30) then
-                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
-                tau_tilde(4:6) = props%cp_006
-                tau_tilde(7:18) = props%cp_007
+      if( props%nslip .eq. 30) then
                 tau_tilde(19:30) = props%cp_008
+      endif
       else
           write(props%out,101) props%s_type
           call die_gracefully
