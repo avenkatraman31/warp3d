@@ -461,6 +461,33 @@ c
        end select
       end if
 c
+c *********************************************************************
+c     anisotropic voche hardening Gmat initialization
+c     H allocated but unused since it requires a crystal state user variable u(9)
+c *********************************************************************
+
+      if( h_type .eq. 3 ) then
+       select case( isw )
+         case( 1 ) ! allocate G=q,H=unused for anisotropic voche
+           allocate( cc_props%Gmat(n_hard,n_hard),
+     &               cc_props%Hmat(n_hard,n_hard),
+     &               stat=allocate_status)
+           if( allocate_status .ne. 0 ) then
+              write(*,*) ' error allocating G matrix'
+              call die_gracefully
+           end if
+           call mm10_avoche_GH( local_work, s_type1, n_hard,
+     &               cc_props%Gmat, cc_props%Hmat, i, c )
+         case( 2 ) ! deallocate G,H matrices
+           deallocate( cc_props%Gmat, cc_props%Hmat )
+         case default
+           write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
+           write(*,*) '                  job terminated'
+           call die_abort
+       end select
+      end if
+c
+c
       return
 c
       end
@@ -2042,8 +2069,12 @@ c
       double precision, dimension(size_num_hard) :: tau_tilde
       double precision, dimension(max_uhard) :: uhist
 c
-      write (props%out,*) "Not implemented"
-      call die_gracefully
+c      initialize extended voce hardening
+c
+       call mm10_init_avoche( props, tau_tilde, uhist )
+c
+c      write(props%out,*) "Not implemented"
+c      call die_gracefully
 c
       return
       end
@@ -2056,12 +2087,75 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
 c
-      write(props%out,*) "Not implemented"
-      call die_gracefully
+c      setup extended voce hardening
+c
+       call mm10_setup_avoche(props,np1,n)
+c
+c      write(props%out,*) "Not implemented"
+c      call die_gracefully
 c
       return
       end
+c **********************************************************************
+c *                                                                    *
+c *         Initialize  Anisotropic Voche- hardening model             *
+c *                                                                    *
+c **********************************************************************
+c
+      subroutine mm10_init_avoche( props, tau_tilde, uhist )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c ----------------------------------------------------------------------
+c                                                                      *
+c        Setting cp_005- g_0^prism,
+c                   cp_006- g_0^basal,
+c                   cp_007- g_0^pyr-c+a,                               *
+c                   cp_008- g_0^ttwin                                  *
+c ----------------------------------------------------------------------
 
+      type(crystal_props) :: props
+      double precision :: tau_tilde(size_num_hard)
+      double precision, dimension(max_uhard) :: uhist
+c
+      if( props%s_type .eq. 10 .and. props%nslip .eq. 18) then
+                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
+                tau_tilde(4:6) = props%cp_006
+                tau_tilde(7:18) = props%cp_007
+      elseif( props%s_type .eq. 10 .and. props%nslip .eq. 30) then
+                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
+                tau_tilde(4:6) = props%cp_006
+                tau_tilde(7:18) = props%cp_007
+                tau_tilde(19:30) = props%cp_008
+      else
+          write(props%out,101) props%s_type
+          call die_gracefully
+      end if
+c
+      return
+c
+ 101  format(
+     &  10x,'>> Error: initial values not defined for Ti6242 for ',
+     & 'i6', '.', /,10x, 'Aborting...')
+c
+      end
+c
+      subroutine mm10_setup_avoche( props, np1, n )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision :: time
+c
+c              increment the total time
+c
+      time     = n%u(1) + np1%tinc
+      np1%u(1) = time
+c
+      return
+      end
 c *********************************************************************
 c *                                                                   *
 c *         Initialize simple Voche hardening model                   *
@@ -2372,6 +2466,12 @@ c
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
+                tau_tilde(19:30) = props%G_0_v
+      elseif( props%s_type .eq. 11 ) then
+                tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
+                tau_tilde(4:6) = props%eps_dot_0_y
+                tau_tilde(7:18) = props%G_0_v
+                tau_tilde(19:30) = props%G_0_v
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -2427,6 +2527,12 @@ c
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
+                tau_tilde(19:30) = props%G_0_v              
+      elseif( props%s_type .eq. 11 ) then
+                tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
+                tau_tilde(4:6) = props%eps_dot_0_y
+                tau_tilde(7:18) = props%G_0_v
+                tau_tilde(19:30) = props%G_0_v
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -3742,6 +3848,10 @@ c
         if( curslip >= maxslip ) numAct = numAct + 1
       end do
       np1%u(8) = dble(numAct)
+c
+c           compute accumulated slip system shears
+c
+      np1%u(9) = n%u(9)+sum(np1%slip_incs)
 c
       return
       end

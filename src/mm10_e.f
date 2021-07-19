@@ -6284,9 +6284,97 @@ c       Parameters
       H(7,7:18) = local_work%c_props(i,c)%Go_v
 c     q matrix
       G(1:18,1:18) = one
+c     DJGM with twinning systems
+        if(local_work%c_props(i,c)%nslip .eq. 30) then
+        H(1,19:30) = local_work%c_props(i,c)%u3
+        H(2,19:30) = local_work%c_props(i,c)%u6
+        H(3,19:30) = local_work%c_props(i,c)%u9
+        H(4,19:30) = local_work%c_props(i,c)%p_v
+        H(5,19:30) = local_work%c_props(i,c)%boltzman
+        H(6,19:30) = local_work%c_props(i,c)%tauHat_v
+        H(7,19:30) = local_work%c_props(i,c)%Go_v
+c       q matrix
+        G(1:30,1:30) = one
+        endif
         else ! calculate manually
            write(*,*) 'cannot use manual interaction G,H matrices'
            write(*,*) 'routine mm10_DJGM_GH. terminate job'
+           call die_gracefully
+        endif
+c
+      return
+      end subroutine
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine mm10_avoche_GH                  *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/10/2021 tjt               *
+c     *                                                              *
+c     *   drive slection/filling of parameter matrix G               *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+      subroutine mm10_avoche_GH( local_work, s_type, num_hard, G, H,
+     &                        i, c )
+      use mm10_defs ! to get definition of cc_props
+      implicit none
+      include 'include_sig_up'
+c
+      integer :: s_type, num_hard, i, c
+      double precision, dimension(num_hard,num_hard) ::  G
+      double precision, dimension(7,num_hard) ::  H
+      double precision :: one
+c
+      one = 1.d0
+      five=5.d0
+c
+        if( s_type .eq. 9 ) then ! HCP6
+c       Parameters
+c       q matrix
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+c
+        elseif( s_type .eq. 10 ) then ! HCP18/HCP30 depending on props%nslip
+c
+c       Parameters
+c       q matrix
+c
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(1:3,7:18) = one
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+      G(4:6,7:18) = one
+      G(7:18,1:3) = one
+      G(7:18,4:6) = one
+      G(7:18,7:18) = one
+c	 
+c       anistropic voche with twinning systems
+c
+        if(local_work%c_props(i,c)%nslip .eq. 30) then
+c
+c       q matrix
+c
+          G(1:3,19:30) = one
+          G(4:6,19:30) = one
+          G(7:18,19:30) = one		  
+          G(19:30,19:30) = one
+          G(19:30,1:3) = five
+          G(19:30,4:6) = five
+          G(19:30,7:18) = one
+        endif
+        else ! calculate manually
+           write(*,*) 'cannot use manual interaction G,H matrices'
+           write(*,*) 'routine mm10_avoche_GH. terminate job'
            call die_gracefully
         endif
 c

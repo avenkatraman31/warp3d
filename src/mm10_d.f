@@ -218,7 +218,8 @@ c                  7 -- dble(sysID) ( 1 x 1 ) = which system has the
 c                                               maximum rate
 c                  8 -- dble(numAct) ( 1 x 1 ) = number of systems
 c                                          with rate >= 0.1*max_rate
-c                  9 -- unused (2 x 1 )
+c                  9 -- accumulated shear strain on all slip system (1 x 1 )
+c                  10 -- unused (1 x 1)
 c                 - Variables for equivalent power-law creep -
 c                 11 -- ec_dot = np1%p_strain_inc/np1%tinc ( 1 x 1 )
 c                 12 -- n_eff ( 1 x 1 )
