@@ -315,7 +315,6 @@ c
                 elseif( lab(1:nc) .eq. 'mts') then
                    c_array(cnum)%h_type = 2
                 elseif( lab(1:nc) .eq. 'user') then
-
                    c_array(cnum)%h_type = 3
                 elseif( lab(1:nc) .eq. 'ornl') then
                    c_array(cnum)%h_type = 4

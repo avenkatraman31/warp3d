@@ -1478,7 +1478,7 @@ c                         c_array(num)%ni(30,3)=a/ac1
 c HCP: basal, prismatic, 1st-order pyramidal c+a, tensile twinning
                   elseif (c_array(num)%slip_type .eq. 10) then
                         c_array(num)%nslip = 30
-                        write(out,*) 'using tensile twinning'
+                        c_array(num)%num_hard = 30
                         ! material constant of hcp
                         a = 0.295d0
                         c = 0.468d0

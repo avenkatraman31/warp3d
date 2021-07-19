@@ -84,7 +84,8 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 ) ! MTS
            call mm10_h_mts( props, np1, n, stress, tt, h )
         case( 3 ) ! User
-           call mm10_h_user( props, np1, n, stress, tt, h )
+           call mm10_h_user( props, np1, n, vec1, vec2, stress,
+     &                      tt, h )
         case( 4 ) ! ORNL
            call mm10_h_ornl( props, np1, n, vec1, vec2, stress,
      &                       tt, h, gp )
@@ -401,7 +402,8 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 )  ! MTS
           call mm10_estress_mts( props, np1, n, stress, tt, estr )
         case( 3 ) ! User
-          call mm10_estress_user( props, np1, n, stress, tt, estr )
+          call mm10_estress_user( props, np1, n, vec1, vec2, arr1,
+     &                            arr2, stress, tt, estr )
         case( 4 ) ! ORNL
           call mm10_estress_ornl( props, np1, n, vec1, vec2, arr1, 
      &                            arr2, stress, tt, estr )
@@ -465,7 +467,8 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 ) ! MTS
           call mm10_ehard_mts( props, np1, n, stress, tt, etau )
         case( 3 ) ! User
-          call mm10_ehard_user( props, np1, n, stress, tt, etau )
+          call mm10_ehard_user( props, np1, n, vec1, vec2, arr1, arr2,
+     &                          stress, tt, etau )
         case( 4 ) ! ORNL
           call mm10_ehard_ornl( props, np1, n, vec1, vec2, arr1, arr2,
      &                          stress, tt, etau )
@@ -515,9 +518,11 @@ c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3 ) ! Voche, MTS, User
+        case( 1, 2) ! Voche, MTS
          vec1 = zero
          vec2 = zero
+        case( 3 ) ! Anistropic voche User hardening
+          call mm10_v_avoche( props, np1, n, stress, tt, vec1, vec2 )
         case( 4 ) ! ORNL
           call mm10_v_ornl( props, np1, n, stress, tt, vec1, vec2 )
         case( 7 ) ! MRR
@@ -563,8 +568,11 @@ c
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3 ) ! Voche, MTS, User
+        case( 1, 2 ) ! Voche, MTS, User
           continue
+        case( 3 ) ! Anistropic voche User hardening
+          call mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
+     &                      arr1, arr2, both )
         case( 4 ) ! ORNL
           call mm10_a_ornl( props, np1, n, stress, tt, vec1, vec2,
      &                      arr1, arr2, both )
@@ -1660,14 +1668,18 @@ c
       double precision :: slipinc
       integer :: i
 c
-      write(props%out,*) "Not implemented: mm10_slipinc_user"
-      call die_gracefully
+      call mm10_slipinc_avoche(props, np1, n, stress, tt, 
+     &                             i, slipinc)
+c
+c      write(props%out,*) "Not implemented: mm10_slipinc_user"
+c      call die_gracefully
 c
       return
       end subroutine
 c
 c           Actual user hardening function
-      subroutine mm10_h_user(props, np1, n, stress, tt, h)
+      subroutine mm10_h_user(props, np1,
+     &             n,vec1,vec2, stress, tt, h)
       use mm10_defs
       implicit none
 c
@@ -1676,14 +1688,18 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(size_num_hard) :: tt, h
 c
-      write(props%out,*) "Not implemented: mm10_h_user"
-      call die_gracefully
+      call mm10_h_avoche(props, np1,
+     &             n,vec1,vec2, stress, tt, h)
+c
+c      write(props%out,*) "Not implemented: mm10_h_user"
+c      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of hardening fn wrt stress
-      subroutine mm10_estress_user(props, np1, n, stress, tt, et)
+      subroutine mm10_estress_user(props,
+     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
       use mm10_defs
       implicit none
 c
@@ -1693,14 +1709,18 @@ c
       double precision, dimension(size_num_hard) :: tt
       double precision, dimension(size_num_hard,6) :: et
 c
-      write(props%out,*) "Not implemented: mm10_estress_user"
-      call die_gracefully
+      call mm10_estress_avoche(props,
+     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
+c
+c      write(props%out,*) "Not implemented: mm10_estress_user"
+c      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of hardening fn wrt hardening
-      subroutine mm10_ehard_user(props, np1, n, stress, tt, etau)
+      subroutine mm10_ehard_user(props,
+     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
       use mm10_defs
       implicit none
 c
@@ -1711,8 +1731,11 @@ c
       double precision, 
      &   dimension(size_num_hard,size_num_hard) :: etau
 c
-      write(props%out,*) "Not implemented: mm10_ehard_user"
-      call die_gracefully
+        call mm10_ehard_avoche(props,
+     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
+c 
+c      write(props%out,*) "Not implemented: mm10_ehard_user"
+c      call die_gracefully
 c
       return
       end subroutine
@@ -1728,9 +1751,10 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(size_num_hard) :: tt
       double precision, dimension(6,size_num_hard) :: ed
+       ed=0.d0
 c
-      write(props%out,*) "Not implemented: mm10_ed_user"
-      call die_gracefully
+c      write(props%out,*) "Not implemented: mm10_ed_user"
+c      call die_gracefully
 c
       return
       end subroutine
@@ -1746,9 +1770,10 @@ c
       double precision, dimension(size_nslip) :: dgammadtau
       double precision, dimension(size_num_hard) :: tt
 c
+       call mm10_dgdt_avoche(props, np1, n, stress, tt, dgammadtau)
 c
-      write(props%out,*) "Not implemented: mm10_dgdt_user"
-      call die_gracefully
+c      write(props%out,*) "Not implemented: mm10_dgdt_user"
+c      call die_gracefully
 c
       return
       end subroutine
@@ -1766,13 +1791,17 @@ c
      &        :: dgammadtt
 c
 c
-      write(props%out,*) "Not implemented: mm10_dgdh_user"
-      call die_gracefully
+      call mm10_dgdh_avoche(props, np1,
+     &      n, stress, tt, dgammadtt)
+c
+c      write(props%out,*) "Not implemented: mm10_dgdh_user"
+c      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of sliprate wrt strain increment
+c
       subroutine mm10_dgdd_user( props, np1, n, stress, tt, D,
      &                           dgammadd)
       use mm10_defs
@@ -1785,8 +1814,11 @@ c
       double precision, dimension(size_nslip,6) :: dgammadd
 c
 c
-      write(props%out,*) "Not implemented: mm10_dgdd_user"
-      call die_gracefully
+      dgammadd = 0.d0
+c
+c
+c      write(props%out,*) "Not implemented: mm10_dgdd_user"
+c      call die_gracefully
 c
       return
       end subroutine
@@ -1796,10 +1828,6 @@ c *                                                                           *
 c *         Anisotropic Voche hardening subroutines                  *
 c *                                                                           *
 c *****************************************************************************
-c
-c
-c
-c
 c     avoche:
 c
 c           Form intermediate vectors for faster calculations
