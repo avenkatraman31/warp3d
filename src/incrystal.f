@@ -78,7 +78,7 @@ c
              elseif( lab(1:nc) .eq. 'hcp18') then
                    c_array(cnum)%slip_type = 10
              elseif( lab(1:nc) .eq. 'hcp30') then
-                   c_array(cnum)%slip_type = 11				 
+                   c_array(cnum)%slip_type = 11				   
              else
                    call errmsg(353,dumi,dums,dumr,dumd)
              end if
@@ -324,6 +324,8 @@ c
                    c_array(cnum)%h_type = 8
                 elseif( lab(1:nc) .eq. 'djgm') then
                    c_array(cnum)%h_type = 9
+                elseif( lab(1:nc) .eq. 'avoche') then
+                   c_array(cnum)%h_type = 10
                 else
                    call errmsg(364,dumi,dums,dumr,dumd)
                 end if

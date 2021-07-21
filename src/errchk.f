@@ -1408,6 +1408,9 @@ c
             write (out,9003) cnum, 'iD_v'
             go to 1001
       end if
+c
+      if (c_array(cnum)%h_type .eq. 10) return
+c           anisotropic voche
 
       if (c_array(cnum)%h_type .eq. 1) then
 c           simple voche

@@ -98,6 +98,9 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 9 ) ! DJGM
            call mm10_h_DJGM( props, np1, n, vec1, vec2, stress,
      &                      tt, h )
+        case( 10 ) ! anisotropic voche
+           call mm10_h_avoche( props, np1, n, vec1, vec2, stress,
+     &                      tt, h )
         case default
            call mm10b_unknown_hard_error( props )
       end select
@@ -233,6 +236,8 @@ c ***** START: Add new Constitutive Models into this block *****
         call mm10_dgdt_arfr( props,np1, n, stress, tt, dgammadtau )
        case( 9 ) ! DJGM
         call mm10_dgdt_DJGM( props,np1, n, stress, tt, dgammadtau )
+       case( 10 ) ! anisotropic voche
+        call mm10_dgdt_avoche( props,np1, n, stress, tt, dgammadtau )
        case default
         call mm10b_unknown_hard_error( props )
       end select
@@ -336,6 +341,8 @@ c ***** START: Add new Constitutive Models into this block *****
         call mm10_dgdh_arfr( props,np1, n, stress, tt, dgammadtt )
        case( 9)  ! DJGM
         call mm10_dgdh_DJGM( props,np1, n, stress, tt, dgammadtt )
+       case( 10)  ! anisotropic voche
+        call mm10_dgdh_avoche( props,np1, n, stress, tt, dgammadtt )
        case default 
         call mm10b_unknown_hard_error( props )
       end select
@@ -416,6 +423,9 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 9 ) ! DJGM
           call mm10_estress_DJGM( props, np1, n, vec1, vec2, arr1,
      &                            arr2, stress, tt, estr )
+        case( 10 ) ! anisotropic voche
+          call mm10_estress_avoche( props, np1, n, vec1, vec2, arr1,
+     &                            arr2, stress, tt, estr )
         case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -481,6 +491,9 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 9 ) ! DJGM
           call mm10_ehard_DJGM( props, np1, n, vec1, vec2, arr1, arr2,
      &                          stress, tt, etau )
+        case( 10 ) ! anisotropic voche
+          call mm10_ehard_avoche( props, np1, n, vec1, vec2, arr1, arr2,
+     &                          stress, tt, etau )
         case default
           call mm10b_unknown_hard_error(props)
       end select
@@ -531,6 +544,8 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_v_arfr( props, np1, n, stress, tt, vec1, vec2 )
         case( 9 ) ! DJGM
           call mm10_v_DJGM( props, np1, n, stress, tt, vec1, vec2 )
+        case( 10 ) ! anisotropic voche
+          call mm10_v_avoche( props, np1, n, stress, tt, vec1, vec2 )
         case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -584,6 +599,9 @@ c ***** START: Add new Constitutive Models into this block *****
      &                     arr1, arr2, both )
         case( 9 ) ! DJGM
          call mm10_a_DJGM( props, np1, n, stress, tt, vec1, vec2,
+     &                     arr1, arr2, both)
+        case( 10 ) ! anisotropic voche
+         call mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
      &                     arr1, arr2, both)
         case default
          call mm10b_unknown_hard_error( props )
@@ -1226,6 +1244,8 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
         case( 9 ) !DJGM
           call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
+        case( 10 ) !anisotropic voche
+          call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
         case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -1296,7 +1316,9 @@ c                       addition for diffusion
         case( 8 )  ! Armstrong-Frederick
           call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )         
         case( 9 )  ! DJGM
-          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )          
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  ) 
+        case( 10 )  ! anisotropic voche
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  ) 		  
          case default
           call mm10b_unknown_hard_error( props )
       end select
