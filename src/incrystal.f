@@ -477,6 +477,9 @@ c
                 call errmsg(5,dumi,'gt_7',dumr,dumd)
           end if
 c
+c check if twinning is active or not
+c
+c
 c user parameters
 c
        elseif(  matchs_exact('cp_001') ) then

@@ -58,6 +58,10 @@ c
         logical :: solver, strategy, debug, gpall, alter_mode
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
+        ! constants for use in twinning
+        integer :: ntwin, active_twin
+        integer, allocatable :: active_multi_twin(:)
+        logical :: twinning
       end type
 c
       type :: crystal_state
@@ -1479,7 +1483,7 @@ c                         c_array(num)%ni(30,2)=-sqrt(3.d0)*c/(2*ac1)
 c                         c_array(num)%ni(30,3)=a/ac1
 c HCP: basal, prismatic, 1st-order pyramidal c+a
                   elseif (c_array(num)%slip_type .eq. 10) then
-                        c_array(num)%nslip = 18
+                        c_array(num)%nslip = 30
                         c_array(num)%num_hard = c_array(num)%nslip
                         ! material constant of hcp
                         a = 0.295d0
@@ -1793,7 +1797,7 @@ c
                          c_array(num)%ni(30,1)=-c/(2*ac1)
                          c_array(num)%ni(30,2)=-sqrt(3.d0)*c/(2*ac1)
                          c_array(num)%ni(30,3)=a/ac1
-c HCP: basal, prismatic, 1st-order pyramidal c+a, tensile twinning						
+c HCP: basal, prismatic, 1st-order pyramidal c+a, tensile twinning                      
                   elseif (c_array(num)%slip_type .eq. 11) then
                         c_array(num)%nslip = 30
                         c_array(num)%num_hard = c_array(num)%nslip

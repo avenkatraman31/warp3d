@@ -150,7 +150,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3, 8, 9 ) ! Voche, MTS, USER, Armstrong-Frederick, DJGM
+        case( 1, 2, 3, 8, 9,10 ) ! Voche, MTS, USER, Armstrong-Frederick, DJGM
           continue
         case( 4 )  ! ORNL
           call mm10_hi_ornl( props, np1, n, ivec1, ivec2, stress, tt, h)
@@ -905,7 +905,7 @@ c
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-       case( 1, 2, 3, 8, 9 )  ! voche, MTS, User
+       case( 1, 2, 3, 8, 9,10 )  ! voche, MTS, User
          continue
        case( 4 ) ! ORNL
         call mm10_vi_ornl( props, np1, n, stress, tt, ivec1, ivec2 )
@@ -1449,7 +1449,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3, 8, 9 ) ! Voche, MTS, User
+        case( 1, 2, 3, 8, 9,10 ) ! Voche, MTS, User
           continue
         case(4 ) ! ORNL
           dbar = (zero,zero)
@@ -1504,7 +1504,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-         case( 1, 2, 3, 8, 9 )  !Voche, MTS, User
+         case( 1, 2, 3, 8, 9,10 )  !Voche, MTS, User
            continue
          case( 4 ) ! ORNL
            w = (zero,zero)

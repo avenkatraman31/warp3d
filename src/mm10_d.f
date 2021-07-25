@@ -219,7 +219,7 @@ c                                               maximum rate
 c                  8 -- dble(numAct) ( 1 x 1 ) = number of systems
 c                                          with rate >= 0.1*max_rate
 c                  9 -- accumulated shear strain on all slip system (1 x 1 )
-c                  10 -- unused (1 x 1)
+c                  10 -- accumulated twin volume on all twin system (1 x 1 )
 c                 - Variables for equivalent power-law creep -
 c                 11 -- ec_dot = np1%p_strain_inc/np1%tinc ( 1 x 1 )
 c                 12 -- n_eff ( 1 x 1 )
@@ -245,7 +245,7 @@ c
       else
         length_crys_hist(6) = nslip
         length_crys_hist(7) = num_hard
-        length_crys_hist(8) = 15
+        length_crys_hist(8) = num_hard
         length_crys_hist(9) = num_hard
         length_crys_hist(10) = 6
         length_crys_hist(11) = 6

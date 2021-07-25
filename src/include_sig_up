@@ -197,6 +197,7 @@ c     Added stuff for CP
       integer, allocatable :: angle_type(:)                   ! mxvl
       integer, allocatable :: angle_convention(:)             ! mxvl
       type(crystal_properties), allocatable :: c_props(:,:)   ! mxvl,max_crystals
+      type(crystal_properties), allocatable :: c_twin_props(:,:)   ! mxvl,max_crystals
 
 c
       end type

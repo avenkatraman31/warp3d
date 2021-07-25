@@ -3654,6 +3654,8 @@ c     &                        rs*np1%tinc*props%iD_v
          np1%slip_incs(1:nslip)  = vec1(1:nslip)
        case( 9 )  ! DJGM
          np1%slip_incs(1:nslip)  = vec1(1:nslip)
+       case( 10 )  ! anisotropic voche
+         np1%slip_incs(1:nslip)  = vec1(1:nslip)
        case default
          call mm10_unknown_hard_error( props )
       end select
@@ -3778,6 +3780,9 @@ c ***** START: Add new Constitutive Models into this block *****
           case( 9 ) ! DJGM
             call mm10_dgdt_djgm( props, np1, n, np1%stress,
      &                          np1%tau_tilde, dgammadtau)
+          case( 10 ) ! anisotropic voche
+            call mm10_dgdt_avoche( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, dgammadtau)
           case default
             call mm10_unknown_hard_error( props )
         end select
@@ -3855,6 +3860,12 @@ c
 c           compute accumulated slip system shears
 c
       np1%u(9) = n%u(9)+sum(np1%slip_incs)
+c  
+c    Check if twinning has reached critical volume fraction
+c
+      if(props%s_type .eq. 10 .or. props%s_type .eq. 11) then
+        np1%u(10) = n%u(10)+sum(np1%slip_incs(19:30))
+      endif
 c
       return
       end
