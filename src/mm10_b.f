@@ -1318,7 +1318,7 @@ c                       addition for diffusion
         case( 9 )  ! DJGM
           call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  ) 
         case( 10 )  ! anisotropic voche
-          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  ) 		  
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )         
          case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -2220,7 +2220,7 @@ c
       double precision :: dt, slipinc, deltaij
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, dslip, dg_s
+     &     g_s, gamma_dot, temp, dslip, dg_s,p_slip_acc
       double precision, dimension(size_nslip,size_num_hard)
      &        :: dslipinc
       integer :: slip_a, slip_b
@@ -2231,7 +2231,8 @@ c
 
         ! Load material parameters
         dt = np1%tinc
-        
+        p_slip_acc=n%u(9)
+        m_alpha=props%cp_021         
 c ----------------------------------------------------------------------
         if(props%s_type .eq. 9) then!HCP6
         Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
@@ -2342,7 +2343,7 @@ c
       double precision, external :: mm10_rs
       integer :: slip_a
 c
-      double precision :: dt, tau, g_alpha, m_alpha
+      double precision :: dt, tau, g_alpha, m_alpha,p_slip_acc
       double precision,dimension(size_nslip) :: gamma_dot_alpha
         
 c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
@@ -2356,6 +2357,7 @@ c transactions A 37.5 (2006): 1371-1388.
 
         dt = np1%tinc
         m_alpha=props%cp_021
+        p_slip_acc=n%u(9)
 c ----------------------------------------------------------------------
 c                                                                      *
 c        Setting cp_001- gamma_dot_0^prism,
@@ -2413,13 +2415,14 @@ c
       double precision :: dslipinc
       integer :: slip_a, slip_b
 c
-      double precision :: dt, tau, g_alpha, m_alpha
+      double precision :: dt, tau, g_alpha, m_alpha,p_slip_acc
       double precision,dimension(size_nslip) :: gamma_dot_alpha
         
         dgammadtt = 0.d0
         
         dt = np1%tinc
         m_alpha=props%cp_021
+        p_slip_acc=n%u(9)
 c ----------------------------------------------------------------------
 c                                                                      *
 c        Setting cp_001- gamma_dot_0^prism,
@@ -2437,7 +2440,7 @@ c ----------------------------------------------------------------------
         endif
         endif        
         ! Equation [4], slip rate vector
-      do slip_a = 1,props%num_slip
+      do slip_a = 1,props%nslip
         slip_b = slip_a
         tau = mm10_rs(props, np1, n, stress, tt, slip_a)
         g_alpha = tt(slip_a)
