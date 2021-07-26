@@ -33,7 +33,7 @@ cls
 ::       shell does not automatically set up to see Microsoft Visual Studio 8
 ::       located under the 32-bit c:\Program Files (x86)
 ::
-set nmake_exe="c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
+set nmake_exe="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\bin\Hostx86\x64\nmake.exe"
 ::
 if not exist %nmake_exe% (
   echo.

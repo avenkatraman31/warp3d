@@ -6325,8 +6325,8 @@ c     ****************************************************************
 c
       integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G
-      double precision, dimension(7,num_hard) ::  H
-      double precision :: one
+      double precision, dimension(num_hard,num_hard) ::  H
+      double precision :: one,five
 c
       one = 1.d0
       five=5.d0

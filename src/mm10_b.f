@@ -84,8 +84,7 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 ) ! MTS
            call mm10_h_mts( props, np1, n, stress, tt, h )
         case( 3 ) ! User
-           call mm10_h_user( props, np1, n, vec1, vec2, stress,
-     &                      tt, h )
+           call mm10_h_user( props, np1, n, stress, tt, h )
         case( 4 ) ! ORNL
            call mm10_h_ornl( props, np1, n, vec1, vec2, stress,
      &                       tt, h, gp )
@@ -97,9 +96,6 @@ c ***** START: Add new Constitutive Models into this block *****
      &                      tt, h )
         case( 9 ) ! DJGM
            call mm10_h_DJGM( props, np1, n, vec1, vec2, stress,
-     &                      tt, h )
-        case( 10 ) ! anisotropic voche
-           call mm10_h_avoche( props, np1, n, vec1, vec2, stress,
      &                      tt, h )
         case default
            call mm10b_unknown_hard_error( props )
@@ -150,7 +146,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3, 8, 9,10 ) ! Voche, MTS, USER, Armstrong-Frederick, DJGM
+        case( 1, 2, 3, 8, 9 ) ! Voche, MTS, USER, Armstrong-Frederick, DJGM
           continue
         case( 4 )  ! ORNL
           call mm10_hi_ornl( props, np1, n, ivec1, ivec2, stress, tt, h)
@@ -236,8 +232,6 @@ c ***** START: Add new Constitutive Models into this block *****
         call mm10_dgdt_arfr( props,np1, n, stress, tt, dgammadtau )
        case( 9 ) ! DJGM
         call mm10_dgdt_DJGM( props,np1, n, stress, tt, dgammadtau )
-       case( 10 ) ! anisotropic voche
-        call mm10_dgdt_avoche( props,np1, n, stress, tt, dgammadtau )
        case default
         call mm10b_unknown_hard_error( props )
       end select
@@ -341,8 +335,6 @@ c ***** START: Add new Constitutive Models into this block *****
         call mm10_dgdh_arfr( props,np1, n, stress, tt, dgammadtt )
        case( 9)  ! DJGM
         call mm10_dgdh_DJGM( props,np1, n, stress, tt, dgammadtt )
-       case( 10)  ! anisotropic voche
-        call mm10_dgdh_avoche( props,np1, n, stress, tt, dgammadtt )
        case default 
         call mm10b_unknown_hard_error( props )
       end select
@@ -409,8 +401,7 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 )  ! MTS
           call mm10_estress_mts( props, np1, n, stress, tt, estr )
         case( 3 ) ! User
-          call mm10_estress_user( props, np1, n, vec1, vec2, arr1,
-     &                            arr2, stress, tt, estr )
+          call mm10_estress_user( props, np1, n, stress, tt, estr )
         case( 4 ) ! ORNL
           call mm10_estress_ornl( props, np1, n, vec1, vec2, arr1, 
      &                            arr2, stress, tt, estr )
@@ -422,9 +413,6 @@ c ***** START: Add new Constitutive Models into this block *****
      &                           arr2, stress, tt, estr )
         case( 9 ) ! DJGM
           call mm10_estress_DJGM( props, np1, n, vec1, vec2, arr1,
-     &                            arr2, stress, tt, estr )
-        case( 10 ) ! anisotropic voche
-          call mm10_estress_avoche( props, np1, n, vec1, vec2, arr1,
      &                            arr2, stress, tt, estr )
         case default
           call mm10b_unknown_hard_error( props )
@@ -477,8 +465,7 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 2 ) ! MTS
           call mm10_ehard_mts( props, np1, n, stress, tt, etau )
         case( 3 ) ! User
-          call mm10_ehard_user( props, np1, n, vec1, vec2, arr1, arr2,
-     &                          stress, tt, etau )
+          call mm10_ehard_user( props, np1, n, stress, tt, etau )
         case( 4 ) ! ORNL
           call mm10_ehard_ornl( props, np1, n, vec1, vec2, arr1, arr2,
      &                          stress, tt, etau )
@@ -490,9 +477,6 @@ c ***** START: Add new Constitutive Models into this block *****
      &                         stress, tt, etau )
         case( 9 ) ! DJGM
           call mm10_ehard_DJGM( props, np1, n, vec1, vec2, arr1, arr2,
-     &                          stress, tt, etau )
-        case( 10 ) ! anisotropic voche
-          call mm10_ehard_avoche( props, np1, n, vec1, vec2, arr1, arr2,
      &                          stress, tt, etau )
         case default
           call mm10b_unknown_hard_error(props)
@@ -531,11 +515,9 @@ c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2) ! Voche, MTS
+        case( 1, 2, 3 ) ! Voche, MTS, User
          vec1 = zero
          vec2 = zero
-        case( 3 ) ! Anistropic voche User hardening
-          call mm10_v_avoche( props, np1, n, stress, tt, vec1, vec2 )
         case( 4 ) ! ORNL
           call mm10_v_ornl( props, np1, n, stress, tt, vec1, vec2 )
         case( 7 ) ! MRR
@@ -544,8 +526,6 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_v_arfr( props, np1, n, stress, tt, vec1, vec2 )
         case( 9 ) ! DJGM
           call mm10_v_DJGM( props, np1, n, stress, tt, vec1, vec2 )
-        case( 10 ) ! anisotropic voche
-          call mm10_v_avoche( props, np1, n, stress, tt, vec1, vec2 )
         case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -583,11 +563,8 @@ c
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2 ) ! Voche, MTS, User
+        case( 1, 2, 3 ) ! Voche, MTS, User
           continue
-        case( 3 ) ! Anistropic voche User hardening
-          call mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
-     &                      arr1, arr2, both )
         case( 4 ) ! ORNL
           call mm10_a_ornl( props, np1, n, stress, tt, vec1, vec2,
      &                      arr1, arr2, both )
@@ -599,9 +576,6 @@ c ***** START: Add new Constitutive Models into this block *****
      &                     arr1, arr2, both )
         case( 9 ) ! DJGM
          call mm10_a_DJGM( props, np1, n, stress, tt, vec1, vec2,
-     &                     arr1, arr2, both)
-        case( 10 ) ! anisotropic voche
-         call mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
      &                     arr1, arr2, both)
         case default
          call mm10b_unknown_hard_error( props )
@@ -905,7 +879,7 @@ c
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-       case( 1, 2, 3, 8, 9,10 )  ! voche, MTS, User
+       case( 1, 2, 3, 8, 9 )  ! voche, MTS, User
          continue
        case( 4 ) ! ORNL
         call mm10_vi_ornl( props, np1, n, stress, tt, ivec1, ivec2 )
@@ -1244,8 +1218,6 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
         case( 9 ) !DJGM
           call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
-        case( 10 ) !anisotropic voche
-          call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
         case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -1316,9 +1288,7 @@ c                       addition for diffusion
         case( 8 )  ! Armstrong-Frederick
           call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )         
         case( 9 )  ! DJGM
-          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  ) 
-        case( 10 )  ! anisotropic voche
-          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )         
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )          
          case default
           call mm10b_unknown_hard_error( props )
       end select
@@ -1449,7 +1419,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2, 3, 8, 9,10 ) ! Voche, MTS, User
+        case( 1, 2, 3, 8, 9 ) ! Voche, MTS, User
           continue
         case(4 ) ! ORNL
           dbar = (zero,zero)
@@ -1504,7 +1474,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-         case( 1, 2, 3, 8, 9,10 )  !Voche, MTS, User
+         case( 1, 2, 3, 8, 9 )  !Voche, MTS, User
            continue
          case( 4 ) ! ORNL
            w = (zero,zero)
@@ -1690,18 +1660,14 @@ c
       double precision :: slipinc
       integer :: i
 c
-      call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             i, slipinc)
-c
-c      write(props%out,*) "Not implemented: mm10_slipinc_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_slipinc_user"
+      call die_gracefully
 c
       return
       end subroutine
 c
 c           Actual user hardening function
-      subroutine mm10_h_user(props, np1,
-     &             n,vec1,vec2, stress, tt, h)
+      subroutine mm10_h_user(props, np1, n, stress, tt, h)
       use mm10_defs
       implicit none
 c
@@ -1710,18 +1676,14 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(size_num_hard) :: tt, h
 c
-      call mm10_h_avoche(props, np1,
-     &             n,vec1,vec2, stress, tt, h)
-c
-c      write(props%out,*) "Not implemented: mm10_h_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_h_user"
+      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of hardening fn wrt stress
-      subroutine mm10_estress_user(props,
-     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
+      subroutine mm10_estress_user(props, np1, n, stress, tt, et)
       use mm10_defs
       implicit none
 c
@@ -1731,18 +1693,14 @@ c
       double precision, dimension(size_num_hard) :: tt
       double precision, dimension(size_num_hard,6) :: et
 c
-      call mm10_estress_avoche(props,
-     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
-c
-c      write(props%out,*) "Not implemented: mm10_estress_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_estress_user"
+      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of hardening fn wrt hardening
-      subroutine mm10_ehard_user(props,
-     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
+      subroutine mm10_ehard_user(props, np1, n, stress, tt, etau)
       use mm10_defs
       implicit none
 c
@@ -1753,11 +1711,8 @@ c
       double precision, 
      &   dimension(size_num_hard,size_num_hard) :: etau
 c
-        call mm10_ehard_avoche(props,
-     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
-c 
-c      write(props%out,*) "Not implemented: mm10_ehard_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_ehard_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1773,10 +1728,9 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(size_num_hard) :: tt
       double precision, dimension(6,size_num_hard) :: ed
-       ed=0.d0
 c
-c      write(props%out,*) "Not implemented: mm10_ed_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_ed_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1792,10 +1746,9 @@ c
       double precision, dimension(size_nslip) :: dgammadtau
       double precision, dimension(size_num_hard) :: tt
 c
-       call mm10_dgdt_avoche(props, np1, n, stress, tt, dgammadtau)
 c
-c      write(props%out,*) "Not implemented: mm10_dgdt_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_dgdt_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1813,17 +1766,13 @@ c
      &        :: dgammadtt
 c
 c
-      call mm10_dgdh_avoche(props, np1,
-     &      n, stress, tt, dgammadtt)
-c
-c      write(props%out,*) "Not implemented: mm10_dgdh_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_dgdh_user"
+      call die_gracefully
 c
       return
       end subroutine
 c
 c           Derivative of sliprate wrt strain increment
-c
       subroutine mm10_dgdd_user( props, np1, n, stress, tt, D,
      &                           dgammadd)
       use mm10_defs
@@ -1836,637 +1785,8 @@ c
       double precision, dimension(size_nslip,6) :: dgammadd
 c
 c
-      dgammadd = 0.d0
-c
-c
-c      write(props%out,*) "Not implemented: mm10_dgdd_user"
-c      call die_gracefully
-c
-      return
-      end subroutine
-c
-c *****************************************************************************
-c *                                                                           *
-c *         Anisotropic Voche hardening subroutines                  *
-c *                                                                           *
-c *****************************************************************************
-c     avoche:
-c
-c           Form intermediate vectors for faster calculations
-      subroutine mm10_v_avoche(props, np1,n, stress, tt,
-     &   vec1, vec2)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1, vec2
-      integer :: alpha
-      double precision :: slipinc
-c
-      do alpha = 1,props%nslip
-         call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                            alpha, slipinc)
-         vec1(alpha) = slipinc
-      enddo
-c
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine mm10_a_avoche                     *
-c     *                                                              *
-c     *                       written by : av                        *
-c     *                                                              *
-c     *                   last modified: 07/07/2021                  *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
-     &                        arr1, arr2, both )
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      integer :: both
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1, vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-c
-      integer :: nslip, num_hard  
-      double precision, allocatable :: temp_arr2(:,:)    
-c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-c!DIR$ ASSUME_ALIGNED tt:64     
-c
-c              arr1 treated as vector inside
-c
-      nslip    = props%nslip
-      num_hard = props%num_hard
-c      
-      call mm10_dgdt_avoche( props, np1, n, stress, tt, arr1(1,1) )
-c
-c              arr2 must have lead dimension = nslip for compatibility 
-c              with _dgdh_DJGM. values defined inside the routine - no
-c              need to copyin. only copyout needed
-c
-      if( both == 2 ) then
-         allocate( temp_arr2(nslip,num_hard) )
-         call mm10_dgdh_avoche( props, np1, n, stress, tt, temp_arr2 )
-         arr2(1:nslip,1:num_hard) = temp_arr2
-         deallocate( temp_arr2 ) 
-      end if
-c      
-      return
-      end
-c
-c           Calculate the slip increment along system i  
-c           anisotropic voce model
-      subroutine mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             alpha, slipinc)
-c
-      use mm10_defs
-      use mm10_constants
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt
-      double precision, external :: mm10_rs
-      double precision :: slipinc
-      integer :: alpha
-c
-      double precision :: dt, tau, g_alpha, m_alpha
-      double precision,dimension(size_nslip) :: 
-     &                          gamma_dot_alpha
-        
-        tau = mm10_rs(props, np1, n, stress, tt, alpha)
-        g_alpha = tt(alpha)
-        dt = np1%tinc
-        m_alpha=props%cp_021
-c ----------------------------------------------------------------------
-c                                                                      *
-c        Setting cp_001- gamma_dot_0^prism,
-c                   cp_002- gamma_dot_0^basal,
-c                   cp_003- gamma_dot_0^pyr-c+a,                       *
-c                   cp_004- gamma_dot_0^ttwin                          *
-c                   cp_021 - m_alpha (rate exponent)                   *
-c ----------------------------------------------------------------------
-        gamma_dot_alpha(1:3) = props%cp_001 ! gamma_dot_0 (s^-1)
-        gamma_dot_alpha(4:6) = props%cp_002
-        if(props%s_type .eq. 10) then!HCP18
-        gamma_dot_alpha(7:18) = props%cp_003
-        if( props%nslip .eq. 30) then!HCP30
-            gamma_dot_alpha(19:30) = props%cp_004        
-        endif
-        endif
-        ! Equation [4]
-        slipinc = dt * gamma_dot_alpha(alpha) * 
-     &  abs(tau/g_alpha)**(one/m_alpha)*dsign(one,tau)
-      
-      return
-      end
-c
-c
-c     Hardening function for anisotropic voche model
-c
-      subroutine mm10_h_avoche(props, np1,
-     &             n,vec1,vec2, stress, tt, g)
-c
-      use mm10_defs
-      use mm10_constants
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt, g, h
-      double precision, dimension(max_uhard) :: vec1, vec2
-      double precision :: slipinc
-      integer :: slip_a, slip_b
-      double precision, dimension(max_uhard,max_uhard) ::Hmat
-c
-      double precision :: dt
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot,p_slip_acc
-
-        ! Load material parameters
-        ! q=Gmat matrix is loaded at top of mm10
-        
-        dt = np1%tinc
-        p_slip_acc=n%u(9)
-c ----------------------------------------------------------------------
-c                                                                      *
-c        Setting cp_009- g_1^prism,
-c                   cp_010- g_1^basal,                                 *
-c                   cp_011- g_1^pyrca,                                 *
-c                   cp_012- g_1^ttwin,                                 *
-c                   cp_013- theta_0^prism,                             *
-c                   cp_014- theta_0^basal,                             *
-c                   cp_015- theta_0^pyrca,                             *
-c                   cp_016- theta_0^ttwin,                             *
-c                   cp_017- theta_1^prism,                             *
-c                   cp_018- theta_1^basal,                             *
-c                   cp_019- theta_1^pyrca,                             *
-c                   cp_020- theta_1^ttwin,                             *
-c ----------------------------------------------------------------------
-        if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc) 
-c
-        elseif (props%s_type .eq. 10) then!HCP18/HCP30
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)
-c
-            if(props%nslip .eq. 30) then!HCP30
-            ! Equation [6], g_s equation has to be modified
-            Hmat(1:3,19:30)=(props%cp_009+props%cp_017)+
-         &      (props%cp_013-props%cp_017+
-         &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-         &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-            Hmat(4:6,19:30)=(props%cp_010+props%cp_018)+
-         &      (props%cp_014-props%cp_018+
-         &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-         &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-            Hmat(7:18,19:30)=(props%cp_011+props%cp_019)+
-         &      (props%cp_015-props%cp_019+
-         &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-         &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)    
-            Hmat(19:30,1:30)=(props%cp_012+props%cp_020)+
-         &      (props%cp_016-props%cp_020+
-         &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-         &       dexp(-1.d0*props%cp_016/props%cp_012*p_slip_acc)   
-            endif
-c
-        else ! error
-           write(*,*) 'cannot use manual H matrix'
-           write(*,*) 'routine mm10_h_avoche. terminate job'
-           call die_gracefully
-        endif
-c       
-       ! Equation [5]
-        do slip_a = 1,props%nslip
-            g_dot = zero
-            do slip_b = 1,props%nslip
-                slipinc = vec1(slip_b)
-                gamma_dot = abs(slipinc)/dt
-                g_dot = g_dot + props%Gmat(slip_a, slip_b) * 
-     &                         Hmat(slip_a,slip_b) * abs(gamma_dot)
-            enddo
-            g_n = n%tau_tilde(slip_a)
-            g(slip_a) = g_n + g_dot*dt
-        enddo
-        
-      return
-      end
-c
-c
-c     anisotropic voche:
-c
-c           Derivative of hardening fn wrt stress
-      subroutine mm10_estress_avoche(props,
-     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
- 
-      use mm10_defs
-      use mm10_constants
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, dtdstress
-      double precision, dimension(size_num_hard) :: tt,h,dh
-      double precision, dimension(size_num_hard,6) :: et
-      double precision, dimension(max_uhard) :: vec1, vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2,
-     &                                                    Hmat
-c
-      double precision :: dt, slipinc
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, dg_s, dslip,p_slip_acc
-      double precision, dimension(size_nslip) :: dslipinc
-      integer :: slip_a, slip_b
-      
-      et = zero
-
-      ! compute derivatives of slip increments with respect to resolved
-      ! shear stress
-        dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)
-
-        ! Load material parameters
-        dt = np1%tinc       
-        p_slip_acc=n%u(9)
-        m_alpha=props%cp_021        
-c ----------------------------------------------------------------------
-c                                                                      *
-c        Setting cp_009- g_1^prism,
-c                   cp_010- g_1^basal,                                 *
-c                   cp_011- g_1^pyrca,                                 *
-c                   cp_012- g_1^ttwin,                                 *
-c                   cp_013- theta_0^prism,                             *
-c                   cp_014- theta_0^basal,                             *
-c                   cp_015- theta_0^pyrca,                             *
-c                   cp_016- theta_0^ttwin,                             *
-c                   cp_017- theta_1^prism,                             *
-c                   cp_018- theta_1^basal,                             *
-c                   cp_019- theta_1^pyrca,                             *
-c                   cp_020- theta_1^ttwin,                             *
-c ----------------------------------------------------------------------
-        if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc) 
-        elseif (props%s_type .eq. 10) then!HCP18/HCP30
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)
-            if(props%nslip .eq. 30) then!HCP30
-            ! Equation [6], g_s equation has to be modified
-            Hmat(1:3,19:30)=(props%cp_009+props%cp_017)+
-         &      (props%cp_013-props%cp_017+
-         &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-         &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-            Hmat(4:6,19:30)=(props%cp_010+props%cp_018)+
-         &      (props%cp_014-props%cp_018+
-         &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-         &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-            Hmat(7:18,19:30)=(props%cp_011+props%cp_019)+
-         &      (props%cp_015-props%cp_019+
-         &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-         &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)    
-            Hmat(19:30,1:30)=(props%cp_012+props%cp_020)+
-         &      (props%cp_016-props%cp_020+
-         &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-         &       dexp(-1.d0*props%cp_016/props%cp_012*p_slip_acc)   
-            endif
-        else ! error
-           write(*,*) 'cannot use manual H matrix'
-           write(*,*) 'routine mm10_h_avoche. terminate job'
-           call die_gracefully
-        endif  
-        dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)       
-        ! Equation [5]
-        ! Equation [6], g_s equation has to be modified
-        do slip_a = 1,props%nslip
-            do slip_b = 1,props%nslip
-                dtdstress(1:6) = np1%ms(1:6,slip_b)
-                slipinc = vec1(slip_b)
-                et(slip_a,1:6) = et(slip_a,1:6) + 
-     &          (props%Gmat(slip_a, slip_b)
-     &          * Hmat(slip_a, slip_b)*dslipinc(slip_b)
-     &          * dtdstress(1:6))
-            enddo
-        enddo
-c
-       return
-        end
-c
-c
-c     avoche:
-c
-c           Derivative of hardening fn wrt hardening
-        subroutine mm10_ehard_avoche(props,
-     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
- 
-      use mm10_defs
-      use mm10_constants
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt,h,dh
-      double precision, dimension(size_num_hard,size_num_hard) :: etau
-      double precision, dimension(max_uhard) :: vec1, vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2,
-     &                                                    Hmat
-c
-      double precision :: dt, slipinc, deltaij
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, dslip, dg_s,p_slip_acc
-      double precision, dimension(size_nslip,size_num_hard)
-     &        :: dslipinc
-      integer :: slip_a, slip_b
-      
-       etau = zero
-
-       dslipinc = arr2(1:props%nslip,1:props%num_hard)
-
-        ! Load material parameters
-        dt = np1%tinc
-        p_slip_acc=n%u(9)
-        m_alpha=props%cp_021         
-c ----------------------------------------------------------------------
-        if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc) 
-        elseif (props%s_type .eq. 10) then!HCP18/HCP30
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)
-            if(props%nslip .eq. 30) then!HCP30
-            ! Equation [6], g_s equation has to be modified
-            Hmat(1:3,19:30)=(props%cp_009+props%cp_017)+
-         &      (props%cp_013-props%cp_017+
-         &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-         &       dexp(-1.d0*props%cp_013/props%cp_009*p_slip_acc)    
-            Hmat(4:6,19:30)=(props%cp_010+props%cp_018)+
-         &      (props%cp_014-props%cp_018+
-         &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-         &       dexp(-1.d0*props%cp_014/props%cp_010*p_slip_acc)    
-            Hmat(7:18,19:30)=(props%cp_011+props%cp_019)+
-         &      (props%cp_015-props%cp_019+
-         &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-         &       dexp(-1.d0*props%cp_015/props%cp_011*p_slip_acc)    
-            Hmat(19:30,1:30)=(props%cp_012+props%cp_020)+
-         &      (props%cp_016-props%cp_020+
-         &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-         &       dexp(-1.d0*props%cp_016/props%cp_012*p_slip_acc)   
-            endif
-        else ! error
-           write(*,*) 'cannot use manual H matrix'
-           write(*,*) 'routine mm10_h_avoche. terminate job'
-           call die_gracefully
-        endif  
-
-        
-        ! Equation [5]
-        do slip_a = 1,props%nslip
-            do slip_b = 1,props%nslip
-                  if( slip_a.eq.slip_b ) then
-                      deltaij = one
-                  else
-                      deltaij = zero
-                  endif
-                slipinc = vec1(slip_b)
-                gamma_dot = abs(slipinc)/dt
-                dslip = dslipinc(slip_b,slip_b)/dt
-                etau(slip_a,slip_b) = deltaij - 
-     &          props%Gmat(slip_a, slip_b)*
-     &          Hmat(slip_a, slip_b)*dslipinc(slip_b,slip_b)
-            enddo
-        enddo
-
-       return
-       end
-c
-c
-c           Derivative of hardening fn wrt strain
-      subroutine mm10_ed_avoche(props, np1, n, stress, tt, ed)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt
-      double precision, dimension(6,size_num_hard) :: ed
-c
-      ed = 0.d0
-c
-      return
-      end subroutine
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine mm10_dgdt_avoche                  *
-c     *                                                              *
-c     *                       written by : av                        *
-c     *                                                              *
-c     *                   last modified: 07/18/21                    *
-c     *                                                              *
-c     *     Calculate partial gamma(s) w.r.t. tau(s) for each slip   *
-c     *     system, for use in J11 in material integration. DJGM     *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_dgdt_avoche(props, np1, n, stress, tt, dgdt)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt, dgdt
-      double precision, external :: mm10_rs
-      integer :: slip_a
-c
-      double precision :: dt, tau, g_alpha, m_alpha,p_slip_acc
-      double precision,dimension(size_nslip) :: gamma_dot_alpha
-        
-c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
-c creep in polycrystalline Ti-6242." Metallurgical and materials 
-c transactions A 37.5 (2006): 1371-1388.
-
-        ! Load hard coded material parameters
-        ! q=Gmat matrix is loaded at top of mm10
-        
-        dgdt = 0.d0
-
-        dt = np1%tinc
-        m_alpha=props%cp_021
-        p_slip_acc=n%u(9)
-c ----------------------------------------------------------------------
-c                                                                      *
-c        Setting cp_001- gamma_dot_0^prism,
-c                   cp_002- gamma_dot_0^basal,
-c                   cp_003- gamma_dot_0^pyr-c+a,                       *
-c                   cp_004- gamma_dot_0^ttwin                          *
-c                   cp_021 - m_alpha (rate exponent)                   *
-c ----------------------------------------------------------------------
-        gamma_dot_alpha(1:3) = props%cp_001 ! gamma_dot_0 (s^-1)
-        gamma_dot_alpha(4:6) = props%cp_002
-        if(props%s_type .eq. 10) then!HCP18
-        gamma_dot_alpha(7:18) = props%cp_003
-        if( props%nslip .eq. 30) then!HCP30
-            gamma_dot_alpha(19:30) = props%cp_004        
-        endif
-        endif        
-        ! Equation [4], slip rate vector        
-        ! Equation [4], slip rate vector
-        do slip_a = 1,props%nslip
-            tau = mm10_rs(props, np1, n, stress, tt, slip_a)
-            g_alpha = tt(slip_a)
-            dgdt(slip_a) = dt*gamma_dot_alpha(slip_a)/m_alpha
-     &      * abs(tau/g_alpha)**((1.d0/m_alpha) - 1.d0) * 
-     &        (1.d0/g_alpha)
-        enddo
-        
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine mm10_dgdh_avoche                  *
-c     *                                                              *
-c     *                       written by : av                        *
-c     *                                                              *
-c     *                   last modified: 07/12/21                    *
-c     *                                                              *
-c     *     Calculate partial gamma(s) w.r.t. tt for each slip       *
-c     *     system, for use in J12 in material integration. DJGM     *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_dgdh_avoche(props, np1,
-     &      n, stress, tt, dgammadtt)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(size_num_hard) :: tt
-      double precision, dimension(size_num_hard,size_num_hard)
-     &                 :: dgammadtt
-      double precision, external:: mm10_rs
-      double precision :: dslipinc
-      integer :: slip_a, slip_b
-c
-      double precision :: dt, tau, g_alpha, m_alpha,p_slip_acc
-      double precision,dimension(size_nslip) :: gamma_dot_alpha
-        
-        dgammadtt = 0.d0
-        
-        dt = np1%tinc
-        m_alpha=props%cp_021
-        p_slip_acc=n%u(9)
-c ----------------------------------------------------------------------
-c                                                                      *
-c        Setting cp_001- gamma_dot_0^prism,
-c                   cp_002- gamma_dot_0^basal,
-c                   cp_003- gamma_dot_0^pyr-c+a,                       *
-c                   cp_004- gamma_dot_0^ttwin                          *
-c                   cp_021 - m_alpha (rate exponent)                   *
-c ----------------------------------------------------------------------
-        gamma_dot_alpha(1:3) = props%cp_001 ! gamma_dot_0 (s^-1)
-        gamma_dot_alpha(4:6) = props%cp_002
-        if(props%s_type .eq. 10) then!HCP18
-        gamma_dot_alpha(7:18) = props%cp_003
-        if( props%nslip .eq. 30) then!HCP30
-            gamma_dot_alpha(19:30) = props%cp_004        
-        endif
-        endif        
-        ! Equation [4], slip rate vector
-      do slip_a = 1,props%nslip
-        slip_b = slip_a
-        tau = mm10_rs(props, np1, n, stress, tt, slip_a)
-        g_alpha = tt(slip_a)
-        dslipinc = dt * (1.d0/m_alpha) * gamma_dot_alpha(slip_a)
-     &  * abs(tau/g_alpha)**(1.d0/m_alpha)
-     &  * (-1.d0/g_alpha)*sign(1.d0,tau)
-          dgammadtt(slip_a,slip_b) = dslipinc
-      enddo
-        
-      return
-      end
-c
-c
-c           Derivative of sliprate wrt strain increment
-      subroutine mm10_dgdd_avoche(props, np1, n, stress, tt, D, 
-     &              dgammadd)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, D
-      double precision, dimension(6,size_nslip) :: dgammadd
-      double precision, dimension(size_num_hard) :: tt
-c
-      dgammadd = 0.d0
+      write(props%out,*) "Not implemented: mm10_dgdd_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -6060,7 +5380,6 @@ c
 c
       return
       end subroutine
-c
 c
 c
 c     Halite/diffusion functions
