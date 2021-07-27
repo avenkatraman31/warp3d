@@ -595,8 +595,6 @@ c ***** START: Add new Constitutive Models into this block *****
          call mm10_init_arfr( props, work_hist1, work_hist2 )
         case( 9 ) ! DJGM
          call mm10_init_djgm( props, work_hist1, work_hist2 )
-        case( 10 ) ! anisotropic voche
-         call mm10_init_avoche( props, work_hist1, work_hist2 )
         case default
          call mm10_unknown_hard_error( props )
       end select
@@ -942,8 +940,6 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_setup_arfr(props, np1, n)
         case( 9 )  ! DJDM
           call mm10_setup_DJGM(props, np1, n)
-        case( 10 )  ! anisotropic voche
-          call mm10_setup_avoche(props, np1, n)
         case default ! error
           call mm10_unknown_hard_error( props )
       end select
@@ -3779,9 +3775,6 @@ c ***** START: Add new Constitutive Models into this block *****
      &                          np1%tau_tilde, dgammadtau )
           case( 9 ) ! DJGM
             call mm10_dgdt_djgm( props, np1, n, np1%stress,
-     &                          np1%tau_tilde, dgammadtau)
-          case( 10 ) ! anisotropic voche
-            call mm10_dgdt_avoche( props, np1, n, np1%stress,
      &                          np1%tau_tilde, dgammadtau)
           case default
             call mm10_unknown_hard_error( props )
