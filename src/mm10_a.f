@@ -1013,6 +1013,7 @@ c
         case( 7 ) ! MRR
         case( 8 ) ! Armstrong-Frederick
         case( 9 ) ! DJGM
+        case( 10 ) ! anisotropic voche
         case default
           call mm10_unknown_hard_error(props)
       end select
@@ -3682,6 +3683,7 @@ c     Compute diffusion rate
           case( 7 ) ! MRR
           case( 8 ) ! Armstrong-Frederick
           case( 9 ) ! DJGM
+          case( 10 ) ! anisotropic voce
           case default
             call mm10_unknown_hard_error( props )
       end select
