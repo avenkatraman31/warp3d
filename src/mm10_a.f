@@ -595,6 +595,8 @@ c ***** START: Add new Constitutive Models into this block *****
          call mm10_init_arfr( props, work_hist1, work_hist2 )
         case( 9 ) ! DJGM
          call mm10_init_djgm( props, work_hist1, work_hist2 )
+        case( 10 ) ! DJGM
+         call mm10_init_avoche( props, work_hist1, work_hist2 )
         case default
          call mm10_unknown_hard_error( props )
       end select
@@ -763,6 +765,9 @@ c ***** START: Add new Constitutive Models into this block *****
         case( 9 )
           call mm10_ed_djgm( props, np1, n, np1%stress, np1%tau_tilde,
      &                        ed )
+        case( 10)
+          call mm10_ed_avoche( props, np1, n, np1%stress, np1%tau_tilde,
+     &                        ed )
         case default
           call mm10_unknown_hard_error( props )
       end select
@@ -792,6 +797,9 @@ c ***** START: Add new Constitutive Models into this block *****
      &                          np1%tau_tilde, np1%D, dgammadd )
         case( 9 )
          call mm10_dgdd_djgm( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, np1%D, dgammadd )
+        case( 10)
+         call mm10_dgdd_avoche( props, np1, n, np1%stress,
      &                          np1%tau_tilde, np1%D, dgammadd )
         case default
           call mm10_unknown_hard_error( props )
@@ -940,6 +948,8 @@ c ***** START: Add new Constitutive Models into this block *****
           call mm10_setup_arfr(props, np1, n)
         case( 9 )  ! DJDM
           call mm10_setup_DJGM(props, np1, n)
+        case( 10)  ! anisotropic voche
+          call mm10_setup_avoche(props, np1, n)
         case default ! error
           call mm10_unknown_hard_error( props )
       end select
@@ -2120,7 +2130,7 @@ c ----------------------------------------------------------------------
                 tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%cp_006
 c
-      if( props%s_type .eq. 10 ) then
+      if( props%s_type .eq. 10 .or. props%s_type .eq. 11 ) then
 
                 tau_tilde(7:18) = props%cp_007
       if( props%nslip .eq. 30) then
@@ -3775,6 +3785,9 @@ c ***** START: Add new Constitutive Models into this block *****
      &                          np1%tau_tilde, dgammadtau )
           case( 9 ) ! DJGM
             call mm10_dgdt_djgm( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, dgammadtau)
+          case( 10 ) ! anisotropic voche
+            call mm10_dgdt_avoche( props, np1, n, np1%stress,
      &                          np1%tau_tilde, dgammadtau)
           case default
             call mm10_unknown_hard_error( props )
