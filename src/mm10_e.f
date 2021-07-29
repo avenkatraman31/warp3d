@@ -6259,7 +6259,7 @@ c       Parameters
       H(7,4:6) = local_work%c_props(i,c)%eps_dot_o_y
 c     q matrix
       G(1:6,1:6) = one
-        elseif( s_type .eq. 10 ) then ! HCP18
+        elseif( s_type .eq. 10 .or. s_type .eq. 11) then ! HCP18
 c       Parameters
       H(1,1:3) = local_work%c_props(i,c)%u1
       H(2,1:3) = local_work%c_props(i,c)%u4
@@ -6311,7 +6311,7 @@ c     *                   subroutine mm10_avoche_GH                  *
 c     *                                                              *
 c     *                       written by : av                        *
 c     *                                                              *
-c     *                   last modified: 7/10/2021 tjt               *
+c     *                   last modified: 7/10/2021 av               *
 c     *                                                              *
 c     *   drive slection/filling of parameter matrix G               *
 c     *                                                              *
@@ -6339,7 +6339,7 @@ c       q matrix
       G(4:6,1:3) = one
       G(4:6,4:6) = five
 c
-        elseif( s_type .eq. 10 ) then ! HCP18/HCP30 depending on props%nslip
+        elseif( s_type .eq. 10 .or. s_type .eq. 11) then ! HCP18/HCP30 depending on props%nslip
 c
 c       Parameters
 c       q matrix
