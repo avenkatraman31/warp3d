@@ -2252,43 +2252,43 @@ c ----------------------------------------------------------------------
         Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
      &      (props%cp_013-props%cp_017+
      &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(-one*props%cp_013/props%cp_009*p_slip_acc)    
+     &       dexp(-one*props%cp_013/props%cp_009*p_slip_acc)    
         Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
      &      (props%cp_014-props%cp_018+
      &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc) 
+     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc) 
 c
         elseif (props%s_type .eq. 10 ) then!HCP18
         Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
      &      (props%cp_013-props%cp_017+
      &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
+     &       dexp(one*props%cp_013/props%cp_009*p_slip_acc)    
         Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
      &      (props%cp_014-props%cp_018+
      &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
+     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc)    
         Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
      &      (props%cp_015-props%cp_019+
      &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)
+     &       dexp(one*props%cp_015/props%cp_011*p_slip_acc)
 c
         elseif(props%s_type .eq. 11) then!HCP30
         Hmat(1:3,1:30)=(props%cp_009+props%cp_017)+
      &      (props%cp_013-props%cp_017+
      &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
+     &       dexp(one*props%cp_013/props%cp_009*p_slip_acc)    
         Hmat(4:6,1:30)=(props%cp_010+props%cp_018)+
      &      (props%cp_014-props%cp_018+
      &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
+     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc)    
         Hmat(7:18,1:30)=(props%cp_011+props%cp_019)+
      &      (props%cp_015-props%cp_019+
      &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)    
+     &       dexp(one*props%cp_015/props%cp_011*p_slip_acc)    
         Hmat(19:30,1:30)=(props%cp_012+props%cp_020)+
      &      (props%cp_016-props%cp_020+
      &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-     &       exp(one*props%cp_016/props%cp_012*p_slip_acc)   
+     &       dexp(one*props%cp_016/props%cp_012*p_slip_acc)   
         else ! error
            write(*,*) 'cannot use manual H matrix'
            write(*,*) 'routine mm10_h_avoche. terminate job'
