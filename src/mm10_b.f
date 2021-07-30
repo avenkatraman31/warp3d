@@ -2083,7 +2083,6 @@ c
             do slip_b = 1,props%nslip
             call mm10_slipinc_avoche(props, np1, n, stress, tt, 
      &                             slip_b, slipinc)
-                print*,slipinc
                 gamma_dot = abs(slipinc)/dt
                 g_dot = g_dot + props%Gmat(slip_a, slip_b) * 
      &                         Hmat(slip_a,slip_b) *gamma_dot
@@ -2126,8 +2125,8 @@ c
 
       ! compute derivatives of slip increments with respect to resolved
       ! shear stress
-        dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)
-
+        call mm10_dgdt_avoche( props,np1, n, stress, tt, dslipinc )
+c
         ! Load material parameters
         dt = np1%tinc       
         p_slip_acc=n%u(9)
@@ -2240,9 +2239,10 @@ c
       integer :: slip_a, slip_b
       
        etau = zero
-
-       dslipinc = arr2(1:props%nslip,1:props%num_hard)
-
+c
+        call mm10_dgdh_avoche( props,np1, n, stress, tt, dslipinc )
+c
+c
         ! Load material parameters
         dt = np1%tinc
         p_slip_acc=n%u(9)
@@ -2450,9 +2450,9 @@ c ----------------------------------------------------------------------
         gamma_dot_alpha(4:6) = props%cp_002
         if(props%s_type .eq. 10) then!HCP18
         gamma_dot_alpha(7:18) = props%cp_003
-        if( props%nslip .eq. 30) then!HCP30
-            gamma_dot_alpha(19:30) = props%cp_004        
-        endif
+        elseif( props%nslip .eq. 30) then!HCP30
+        gamma_dot_alpha(7:18) = props%cp_003
+        gamma_dot_alpha(19:30) = props%cp_004        
         endif        
         ! Equation [4], slip rate vector
       do slip_a = 1,props%nslip
