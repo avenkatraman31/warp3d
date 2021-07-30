@@ -396,7 +396,8 @@ c
       process_G_H = ( h_type .eq. 4 ) .or.
      &              ( h_type .eq. 7 ) .or.
      &              ( h_type .eq. 8 ) .or.
-     &              ( h_type .eq. 9 )
+     &              ( h_type .eq. 9 ).or.
+     &              ( h_type .eq. 10)
       if( .not. process_G_H ) return
 c
       if( (h_type .eq. 4) .or. (h_type .eq. 7) ) then
@@ -465,21 +466,19 @@ c *********************************************************************
 c     anisotropic voche hardening Gmat initialization
 c     H allocated but unused since it requires a crystal state user variable u(9)
 c *********************************************************************
-
       if( h_type .eq. 10 ) then
        select case( isw )
          case( 1 ) ! allocate G=q,H=unused for anisotropic voche
            allocate( cc_props%Gmat(n_hard,n_hard),
-     &               cc_props%Hmat(n_hard,n_hard),
      &               stat=allocate_status)
            if( allocate_status .ne. 0 ) then
               write(*,*) ' error allocating G matrix'
               call die_gracefully
            end if
            call mm10_avoche_GH( local_work, s_type1, n_hard,
-     &               cc_props%Gmat, cc_props%Hmat, i, c )
+     &               cc_props%Gmat, i, c )
          case( 2 ) ! deallocate G,H matrices
-           deallocate( cc_props%Gmat, cc_props%Hmat )
+           deallocate( cc_props%Gmat)
          case default
            write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
            write(*,*) '                  job terminated'

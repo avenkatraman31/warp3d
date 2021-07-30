@@ -1976,9 +1976,9 @@ c ----------------------------------------------------------------------
         gamma_dot_alpha(4:6) = props%cp_002
         if(props%s_type .eq. 10) then!HCP18
         gamma_dot_alpha(7:18) = props%cp_003
-        if( props%nslip .eq. 30) then!HCP30
-            gamma_dot_alpha(19:30) = props%cp_004        
-        endif
+        elseif( props%s_type .eq.11) then!HCP30
+        gamma_dot_alpha(7:18) = props%cp_003
+		gamma_dot_alpha(19:30) = props%cp_004        
         endif
         ! Equation [4]
         slipinc = dt * gamma_dot_alpha(alpha) * 
@@ -2001,10 +2001,10 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(size_num_hard) :: tt, g, h
-      double precision, dimension(size_num_hard) :: vec1, vec2
+      double precision, dimension(max_uhard) :: vec1, vec2
       double precision :: slipinc
       integer :: slip_a, slip_b
-      double precision, dimension(max_uhard,max_uhard) ::Hmat
+      double precision, dimension(size_num_hard,size_num_hard) ::Hmat
       double precision :: dt
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
@@ -2077,12 +2077,13 @@ c
            write(*,*) 'routine mm10_h_avoche. terminate job'
            call die_gracefully
         endif
-c       
-       ! Equation [5]
+c
         do slip_a = 1,props%nslip
             g_dot = zero
             do slip_b = 1,props%nslip
-                slipinc = vec1(slip_b)
+            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
+     &                             slip_b, slipinc)
+                print*,slipinc
                 gamma_dot = abs(slipinc)/dt
                 g_dot = g_dot + props%Gmat(slip_a, slip_b) * 
      &                         Hmat(slip_a,slip_b) *gamma_dot
@@ -2111,8 +2112,8 @@ c
       double precision, dimension(size_num_hard) :: tt,h,dh
       double precision, dimension(size_num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2,
-     &                                                    Hmat
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+      double precision, dimension(size_num_hard,size_num_hard) ::Hmat
 c
       double precision :: dt, slipinc
       double precision :: h_0_alpha, gamma_dot_tilde,
@@ -2192,14 +2193,14 @@ c
            write(*,*) 'cannot use manual H matrix'
            write(*,*) 'routine mm10_h_avoche. terminate job'
            call die_gracefully
-        endif  
-        dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)       
+        endif      
         ! Equation [5]
         ! Equation [6], g_s equation has to be modified
         do slip_a = 1,props%nslip
             do slip_b = 1,props%nslip
                 dtdstress(1:6) = np1%ms(1:6,slip_b)
-                slipinc = vec1(slip_b)
+            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
+     &                             slip_b, slipinc)
                 et(slip_a,1:6) = et(slip_a,1:6) + 
      &          (props%Gmat(slip_a, slip_b)
      &          * Hmat(slip_a, slip_b)*dslipinc(slip_b)
@@ -2227,8 +2228,8 @@ c
       double precision, dimension(size_num_hard) :: tt,h,dh
       double precision, dimension(size_num_hard,size_num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2,
-     &                                                    Hmat
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+      double precision, dimension(size_num_hard,size_num_hard) ::Hmat
 c
       double precision :: dt, slipinc, deltaij
       double precision :: h_0_alpha, gamma_dot_tilde,
@@ -2303,7 +2304,8 @@ c
                   else
                       deltaij = zero
                   endif
-                slipinc = vec1(slip_b)
+            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
+     &                             slip_b, slipinc)
                 gamma_dot = abs(slipinc)/dt
                 dslip = dslipinc(slip_b,slip_b)/dt
                 etau(slip_a,slip_b) = deltaij - 
