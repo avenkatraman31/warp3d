@@ -2450,7 +2450,7 @@ c ----------------------------------------------------------------------
         gamma_dot_alpha(4:6) = props%cp_002
         if(props%s_type .eq. 10) then!HCP18
         gamma_dot_alpha(7:18) = props%cp_003
-        elseif( props%nslip .eq. 30) then!HCP30
+        elseif( props%s_type .eq. 11) then!HCP30
         gamma_dot_alpha(7:18) = props%cp_003
         gamma_dot_alpha(19:30) = props%cp_004        
         endif        
