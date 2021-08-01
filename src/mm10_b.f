@@ -531,11 +531,9 @@ c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2) ! Voche, MTS
+        case( 1, 2, 3 ) ! Voche, MTS, User
          vec1 = zero
          vec2 = zero
-        case( 3 ) ! Anistropic voche User hardening
-          call mm10_v_avoche( props, np1, n, stress, tt, vec1, vec2 )
         case( 4 ) ! ORNL
           call mm10_v_ornl( props, np1, n, stress, tt, vec1, vec2 )
         case( 7 ) ! MRR
@@ -583,11 +581,8 @@ c
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
-        case( 1, 2 ) ! Voche, MTS, User
+        case( 1, 2, 3 ) ! Voche, MTS, User
           continue
-        case( 3 ) ! Anistropic voche User hardening
-          call mm10_a_avoche( props, np1, n, stress, tt, vec1, vec2,
-     &                      arr1, arr2, both )
         case( 4 ) ! ORNL
           call mm10_a_ornl( props, np1, n, stress, tt, vec1, vec2,
      &                      arr1, arr2, both )
@@ -1978,7 +1973,7 @@ c ----------------------------------------------------------------------
         gamma_dot_alpha(7:18) = props%cp_003
         elseif( props%s_type .eq.11) then!HCP30
         gamma_dot_alpha(7:18) = props%cp_003
-		gamma_dot_alpha(19:30) = props%cp_004        
+        gamma_dot_alpha(19:30) = props%cp_004        
         endif
         ! Equation [4]
         slipinc = dt * gamma_dot_alpha(alpha) * 
@@ -2081,9 +2076,7 @@ c
         do slip_a = 1,props%nslip
             g_dot = zero
             do slip_b = 1,props%nslip
-            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             slip_b, slipinc)
-                gamma_dot = abs(slipinc)/dt
+                gamma_dot = abs(vec1(slip_b))/dt
                 g_dot = g_dot + props%Gmat(slip_a, slip_b) * 
      &                         Hmat(slip_a,slip_b) *gamma_dot
             enddo
@@ -2198,8 +2191,7 @@ c
         do slip_a = 1,props%nslip
             do slip_b = 1,props%nslip
                 dtdstress(1:6) = np1%ms(1:6,slip_b)
-            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             slip_b, slipinc)
+                slipinc=vec1(slip_b)
                 et(slip_a,1:6) = et(slip_a,1:6) + 
      &          (props%Gmat(slip_a, slip_b)
      &          * Hmat(slip_a, slip_b)*dslipinc(slip_b)
@@ -2304,8 +2296,7 @@ c
                   else
                       deltaij = zero
                   endif
-            call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             slip_b, slipinc)
+                slipinc=vec1(slip_b)
                 gamma_dot = abs(slipinc)/dt
                 dslip = dslipinc(slip_b,slip_b)/dt
                 etau(slip_a,slip_b) = deltaij - 
