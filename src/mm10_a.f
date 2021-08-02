@@ -464,7 +464,7 @@ c
 c
 c *********************************************************************
 c     anisotropic voche hardening Gmat initialization
-c     H allocated but unused since it requires a crystal state user variable u(9)
+c     H not allocated since it needs a crystal state user variable u(9)
 c *********************************************************************
       if( h_type .eq. 10 ) then
        select case( isw )
@@ -3870,7 +3870,7 @@ c
 c  
 c    Check if twinning has reached critical volume fraction
 c
-      if(props%s_type .eq. 10 .or. props%s_type .eq. 11) then
+      if(props%s_type .eq. 11) then
         np1%u(10) = n%u(10)+sum(np1%slip_incs(19:30))
       endif
 c
@@ -4230,3 +4230,211 @@ c
       return
 c
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_init_cc_props_twin           *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/20/2021                   *
+c     *                                                              *
+c     *    Copy properties over from local_work into the update      *
+c     *    structure for the twin upon twin nucleation               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_init_cc_props_twin( inc_props, atype, aconv,
+     &                                variant, debug, cc_props )
+      use mm10_defs
+      use mm10_constants
+	  use twin_variants
+      implicit none
+      include 'include_sig_up'
+      integer :: atype, aconv, variant
+      logical :: debug
+      type(crystal_properties) :: inc_props
+      type(crystal_props) :: cc_props
+	  double precision, dimension(3,3) :: reflection_twin
+c
+c        get the twin reflection matrix
+c
+      reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
+c
+c              scalars
+c
+      cc_props%rate_n      = inc_props%rateN
+      cc_props%tau_hat_y   = inc_props%tauHat_y
+      cc_props%G_0_y       = inc_props%Go_y
+      cc_props%burgers     = inc_props%burgers
+      cc_props%p_v         = inc_props%p_v
+      cc_props%q_v         = inc_props%q_v
+      cc_props%boltzman    = inc_props%boltzman
+      cc_props%theta_0     = inc_props%theta_o
+      cc_props%eps_dot_0_v = inc_props%eps_dot_o_v
+      cc_props%eps_dot_0_y = inc_props%eps_dot_o_y
+      cc_props%p_y         = inc_props%p_y
+      cc_props%q_y         = inc_props%q_y
+      cc_props%tau_a       = inc_props%tau_a
+      cc_props%tau_hat_v   = inc_props%tauHat_v
+      cc_props%G_0_v       = inc_props%Go_v
+      cc_props%k_0         = inc_props%k_o
+      cc_props%mu_0        = inc_props%mu_o
+      cc_props%D_0         = inc_props%D_o
+      cc_props%T_0         = inc_props%t_o
+      cc_props%tau_y       = inc_props%tau_y
+      cc_props%tau_v       = inc_props%tau_v
+      cc_props%voche_m     = inc_props%voche_m
+      cc_props%iD_v        = inc_props%iD_v
+      cc_props%u1          = inc_props%u1
+      cc_props%u2          = inc_props%u2
+      cc_props%u3          = inc_props%u3
+      cc_props%u4          = inc_props%u4
+      cc_props%u5          = inc_props%u5
+      cc_props%u6          = inc_props%u6
+      cc_props%u7          = inc_props%u7
+      cc_props%u8          = inc_props%u8
+      cc_props%u9          = inc_props%u9
+      cc_props%u10         = inc_props%u10
+      cc_props%solver      = inc_props%solver
+      cc_props%strategy    = inc_props%strategy
+      cc_props%gpall       = inc_props%gpall
+      cc_props%gpp         = inc_props%gpp
+      cc_props%method      = inc_props%method
+      cc_props%miter       = inc_props%miter
+      cc_props%atol        = inc_props%atol
+      cc_props%atol1       = inc_props%atol1
+      cc_props%rtol        = inc_props%rtol
+      cc_props%rtol1       = inc_props%rtol1
+      cc_props%xtol        = inc_props%xtol
+      cc_props%xtol1       = inc_props%xtol1
+      cc_props%alter_mode  = inc_props%alter_mode
+c
+      cc_props%cp_001 = inc_props%cp_001
+      cc_props%cp_002 = inc_props%cp_002
+      cc_props%cp_003 = inc_props%cp_003
+      cc_props%cp_004 = inc_props%cp_004
+      cc_props%cp_005 = inc_props%cp_005
+      cc_props%cp_006 = inc_props%cp_006
+      cc_props%cp_007 = inc_props%cp_007
+      cc_props%cp_008 = inc_props%cp_008
+      cc_props%cp_009 = inc_props%cp_009
+      cc_props%cp_010 = inc_props%cp_010
+      cc_props%cp_011 = inc_props%cp_011
+      cc_props%cp_012 = inc_props%cp_012
+      cc_props%cp_013 = inc_props%cp_013
+      cc_props%cp_014 = inc_props%cp_014
+      cc_props%cp_015 = inc_props%cp_015
+      cc_props%cp_016 = inc_props%cp_016
+      cc_props%cp_017 = inc_props%cp_017
+      cc_props%cp_018 = inc_props%cp_018
+      cc_props%cp_019 = inc_props%cp_019
+      cc_props%cp_020 = inc_props%cp_020
+      cc_props%cp_021 = inc_props%cp_021
+      cc_props%cp_022 = inc_props%cp_022
+      cc_props%cp_023 = inc_props%cp_023
+      cc_props%cp_024 = inc_props%cp_024
+      cc_props%cp_025 = inc_props%cp_025
+      cc_props%cp_026 = inc_props%cp_026
+      cc_props%cp_027 = inc_props%cp_027
+      cc_props%cp_028 = inc_props%cp_028
+      cc_props%cp_029 = inc_props%cp_029
+      cc_props%cp_030 = inc_props%cp_030
+      cc_props%cp_031 = inc_props%cp_031
+      cc_props%cp_032 = inc_props%cp_032
+      cc_props%cp_033 = inc_props%cp_033
+      cc_props%cp_034 = inc_props%cp_034
+      cc_props%cp_035 = inc_props%cp_035
+      cc_props%cp_036 = inc_props%cp_036
+      cc_props%cp_037 = inc_props%cp_037
+      cc_props%cp_038 = inc_props%cp_038
+      cc_props%cp_039 = inc_props%cp_039
+      cc_props%cp_040 = inc_props%cp_040
+      cc_props%cp_041 = inc_props%cp_041
+      cc_props%cp_042 = inc_props%cp_042
+      cc_props%cp_043 = inc_props%cp_043
+      cc_props%cp_044 = inc_props%cp_044
+      cc_props%cp_045 = inc_props%cp_045
+      cc_props%cp_046 = inc_props%cp_046
+      cc_props%cp_047 = inc_props%cp_047
+      cc_props%cp_048 = inc_props%cp_048
+      cc_props%cp_049 = inc_props%cp_049
+      cc_props%cp_050 = inc_props%cp_050
+      cc_props%cp_051 = inc_props%cp_051
+      cc_props%cp_052 = inc_props%cp_052
+      cc_props%cp_053 = inc_props%cp_053
+      cc_props%cp_054 = inc_props%cp_054
+      cc_props%cp_055 = inc_props%cp_055
+      cc_props%cp_056 = inc_props%cp_056
+      cc_props%cp_057 = inc_props%cp_057
+      cc_props%cp_058 = inc_props%cp_058
+      cc_props%cp_059 = inc_props%cp_059
+      cc_props%cp_060 = inc_props%cp_060
+      cc_props%cp_061 = inc_props%cp_061
+      cc_props%cp_062 = inc_props%cp_062
+      cc_props%cp_063 = inc_props%cp_063
+      cc_props%cp_064 = inc_props%cp_064
+      cc_props%cp_065 = inc_props%cp_065
+      cc_props%cp_066 = inc_props%cp_066
+      cc_props%cp_067 = inc_props%cp_067
+      cc_props%cp_068 = inc_props%cp_068
+      cc_props%cp_069 = inc_props%cp_069
+      cc_props%cp_070 = inc_props%cp_070
+      cc_props%cp_071 = inc_props%cp_071
+      cc_props%cp_072 = inc_props%cp_072
+      cc_props%cp_073 = inc_props%cp_073
+      cc_props%cp_074 = inc_props%cp_074
+      cc_props%cp_075 = inc_props%cp_075
+      cc_props%cp_076 = inc_props%cp_076
+      cc_props%cp_077 = inc_props%cp_077
+      cc_props%cp_078 = inc_props%cp_078
+      cc_props%cp_079 = inc_props%cp_079
+      cc_props%cp_080 = inc_props%cp_080
+      cc_props%cp_081 = inc_props%cp_081
+      cc_props%cp_082 = inc_props%cp_082
+      cc_props%cp_083 = inc_props%cp_083
+      cc_props%cp_084 = inc_props%cp_084
+      cc_props%cp_085 = inc_props%cp_085
+      cc_props%cp_086 = inc_props%cp_086
+      cc_props%cp_087 = inc_props%cp_087
+      cc_props%cp_088 = inc_props%cp_088
+      cc_props%cp_089 = inc_props%cp_089
+      cc_props%cp_090 = inc_props%cp_090
+      cc_props%cp_091 = inc_props%cp_091
+      cc_props%cp_092 = inc_props%cp_092
+      cc_props%cp_093 = inc_props%cp_093
+      cc_props%cp_094 = inc_props%cp_094
+      cc_props%cp_095 = inc_props%cp_095
+      cc_props%cp_096 = inc_props%cp_096
+      cc_props%cp_097 = inc_props%cp_097
+      cc_props%cp_098 = inc_props%cp_098
+      cc_props%cp_099 = inc_props%cp_099
+      cc_props%cp_100 = inc_props%cp_100
+c
+      cc_props%angle_type       = atype
+      cc_props%angle_convention = aconv
+      cc_props%nslip            = inc_props%nslip
+c
+      cc_props%h_type           = inc_props%h_type
+      cc_props%num_hard         = inc_props%num_hard
+      cc_props%tang_calc        = inc_props%tang_calc
+      cc_props%debug            = debug
+      cc_props%s_type           = inc_props%s_type
+      cc_props%cnum             = inc_props%cnum
+c
+c                    vectors and arrays
+c
+      cc_props%st_it(1) = inc_props%st_it(1)
+      cc_props%st_it(2) = inc_props%st_it(2)
+      cc_props%st_it(3) = inc_props%st_it(3)
+      call mm10_a_copy_vector( cc_props%g, inc_props%rotation_g, 9 )
+      call mm10_a_copy_vector( cc_props%ms, inc_props%ms,
+     &                         6*max_slip_sys )
+      call mm10_a_copy_vector( cc_props%qs, inc_props%qs,
+     &                         3*max_slip_sys )
+      call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
+     &                         3*max_slip_sys )
+      call mm10_a_copy_vector( cc_props%stiffness,
+     &                         inc_props%init_elast_stiff, 36 )
+      return
+      end subroutine

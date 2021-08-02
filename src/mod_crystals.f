@@ -2333,6 +2333,85 @@ c                 Debug routine, dump the definition to STDOUT
 c
             end subroutine
       end module crystal_data
+c     ***************************************************************
+c     *    module twin_variants                                      *
+c     *    tiny module to hold twin normals; used in                *
+c     *    mm10_init_cc_props_twin to rotate stiffness,ms,qc,qs,g   *
+c     ***************************************************************
+      module twin_variants
+      double precision, dimension(12,3) :: n_twins
+      double precision, dimension(12,3,3) :: reflection_twins
+      contains
+      subroutine define_twin_variants()
+        implicit none
+        integer :: i,j,k
+		double precision :: a,c,ac1,ac2
+                        a = 0.295d0
+                        c = 0.468d0
+                        ac1 = sqrt(c**2+a**2)
+                        ac2 = sqrt(4.d0*c**2+3.d0*a**2)
+                        ! Variant 1
+                        n_twins(19-18,1)=0.d0
+                        n_twins(19-18,2)=-2.d0*c/ac2
+                        n_twins(19-18,3)=sqrt(3.d0)*a/ac2
+                        ! Variant 2
+                        n_twins(20-18,1)=sqrt(3.d0)*c/ac2
+                        n_twins(20-18,2)=-c/ac2
+                        n_twins(20-18,3)=sqrt(3.d0)*a/ac2
+                        ! Variant 3
+                        n_twins(21-18,1)=sqrt(3.d0)*c/ac2
+                        n_twins(21-18,2)=c/ac2
+                        n_twins(21-18,3)=sqrt(3.d0)*a/ac2
+                        ! Variant 4
+                        n_twins(22-18,1)=0.d0
+                        n_twins(22-18,2)=2.d0*c/ac2
+                        n_twins(22-18,3)=sqrt(3.d0)*a/ac2
+                        ! Variant 5
+                        n_twins(23-18,1)=-sqrt(3.d0)*c/ac2
+                        n_twins(23-18,2)=c/ac2
+                        n_twins(23-18,3)=sqrt(3.d0)*a/ac2
+                        ! Variant 6
+                        n_twins(24-18,1)=-sqrt(3.d0)*c/ac2
+                        n_twins(24-18,2)=-c/ac2
+                        n_twins(24-18,3)=sqrt(3.d0)*a/ac2
+                         ! Variant 7
+                         n_twins(25-18,1)=c/(2*ac1)
+                         n_twins(25-18,2)=-sqrt(3.d0)*c/(2*ac1)
+                         n_twins(25-18,3)=a/ac1
+                         ! Variant 8
+                         n_twins(26-18,1)=c/ac1
+                         n_twins(26-18,2)=0
+                         n_twins(26-18,3)=a/ac1
+                         ! Variant 9
+                         n_twins(27-18,1)=c/(2*ac1)
+                         n_twins(27-18,2)=sqrt(3.d0)*c/(2*ac1)
+                         n_twins(27-18,3)=a/ac1
+                         ! Variant 10
+                         n_twins(28-18,1)=-c/(2*ac1)
+                         n_twins(28-18,2)=sqrt(3.d0)*c/(2*ac1)
+                         n_twins(28-18,3)=a/ac1
+                         ! Variant 11
+                         n_twins(29-18,1)=-c/ac1
+                         n_twins(29-18,2)=0
+                         n_twins(29-18,3)=a/ac1
+                         ! Variant 12
+                         n_twins(30-18,1)=-c/(2*ac1)
+                         n_twins(30-18,2)=-sqrt(3.d0)*c/(2*ac1)
+                         n_twins(30-18,3)=a/ac1 
+        do k=1,12
+          do i=1,3
+            do j=1,3
+              reflection_twins(i,j,k)=2.d0*n_twins(i,k)*n_twins(j,k)
+            end do
+          reflection_twins(i,i,k)=reflection_twins(i,i,k)-1.d0
+          end do
+        end do
+c       
+      end subroutine define_twin_variants
+      end module twin_variants
+c
+c
+c
 c
 c     ****************************************************************
 c     *                                                              *

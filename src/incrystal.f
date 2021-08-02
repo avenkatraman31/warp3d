@@ -12,6 +12,7 @@ c     ****************************************************************
 c
       subroutine incrystal( sbflg1, sbflg2, chkparam, out )
       use crystal_data
+      use twin_variants
       implicit none 
 c
 c
@@ -52,6 +53,11 @@ c
 c                initialize crystal
 c
       call initialize_new_crystal( cnum, out )
+c      
+c                initialize twin variants
+c
+      call define_twin_variants()
+c
       reading = .true.
       do while( reading )
        if(  matchs_exact('slip_type') ) then
