@@ -4421,7 +4421,7 @@ c
       cc_props%num_hard         = inc_props%num_hard-n_variant
       cc_props%tang_calc        = inc_props%tang_calc
       cc_props%debug            = debug
-      cc_props%s_type           = 10
+      cc_props%s_type           = 10!HCP18
       cc_props%cnum             = inc_props%cnum
 c
 c                    vectors and arrays
