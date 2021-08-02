@@ -4251,7 +4251,7 @@ c
 	  use twin_variants
       implicit none
       include 'include_sig_up'
-      integer :: atype, aconv, variant
+      integer :: atype, aconv, variant,n_variant
       logical :: debug
       type(crystal_properties) :: inc_props
       type(crystal_props) :: cc_props
@@ -4260,6 +4260,8 @@ c
 c        get the twin reflection matrix
 c
       reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
+c
+	  n_variant=12
 c
 c              scalars
 c
@@ -4413,13 +4415,13 @@ c
 c
       cc_props%angle_type       = atype
       cc_props%angle_convention = aconv
-      cc_props%nslip            = inc_props%nslip
+      cc_props%nslip            = inc_props%nslip-n_variant!accounting for only slip 
 c
       cc_props%h_type           = inc_props%h_type
-      cc_props%num_hard         = inc_props%num_hard
+      cc_props%num_hard         = inc_props%num_hard-n_variant
       cc_props%tang_calc        = inc_props%tang_calc
       cc_props%debug            = debug
-      cc_props%s_type           = inc_props%s_type
+      cc_props%s_type           = 10
       cc_props%cnum             = inc_props%cnum
 c
 c                    vectors and arrays
