@@ -68,6 +68,11 @@ c
       logical :: debug, locdebug, mat_debug
       equivalence( tang_avg, tang_avg_vec )
 c
+c     twin props and state declaration: can be extended for multiple twins
+c
+      type(crystal_props) :: cc_props_twin
+      type(crystal_state) :: cc_n_twin,cc_np1_twin
+c
       debug = .false.
 c
       if( debug ) write (iout,*) ".... entering mm10"
@@ -242,6 +247,12 @@ c
      &         work_gradfe,  work_R, ! both readonly,
      &         cc_props, cc_n )
 c
+c
+c    Checking if twin volume fraction has exceeded threshold (2%)
+c
+c
+	  ! if(cc_n%u(10) .gt. two*ptone**two) then
+		! call 
       work_vec1(1:9) = local_work%rot_blk_n1(iloop,1:9,gp)
       work_vec2(1:6) = uddt(iloop,1:6)
       call mm10_setup_np1(
@@ -594,7 +605,7 @@ c ***** START: Add new Constitutive Models into this block *****
          call mm10_init_arfr( props, work_hist1, work_hist2 )
         case( 9 ) ! DJGM
          call mm10_init_djgm( props, work_hist1, work_hist2 )
-        case( 10 ) ! DJGM
+        case( 10 ) ! anisotropic voche
          call mm10_init_avoche( props, work_hist1, work_hist2 )
         case default
          call mm10_unknown_hard_error( props )
@@ -4230,6 +4241,38 @@ c
       return
 c
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_max_vector                 *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/22/2021 rhd               *
+c     *                                                              *
+c     *                     return the max value of an array         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mm10_a_max_vector(v,n,max_v,max_n)
+      implicit none
+      integer, intent(in) :: n
+      double precision, dimension(n) :: v(n)
+      double precision :: max_v
+      integer, intent(out) :: max_n
+      integer :: i
+      max_v=v(1)
+      max_n=1
+      do i=2,n
+        if (v(i).gt.max_v) then
+            max_v=v(i)
+            max_n=i
+        endif
+      end do
+      return
+      end subroutine mm10_a_max_vector
+c
 c
 c     ****************************************************************
 c     *                                                              *
