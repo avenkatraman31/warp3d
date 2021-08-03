@@ -4248,20 +4248,23 @@ c
      &                                variant, debug, cc_props )
       use mm10_defs
       use mm10_constants
-	  use twin_variants
+      use twin_variants
       implicit none
       include 'include_sig_up'
       integer :: atype, aconv, variant,n_variant
+      integer :: index_i
       logical :: debug
       type(crystal_properties) :: inc_props
       type(crystal_props) :: cc_props
-	  double precision, dimension(3,3) :: reflection_twin
+      double precision, dimension(3,3) :: reflection_twin,
+     &                                    reflection_twin_s
+      double precision, dimension(6,6) :: reflection_twin_6
 c
 c        get the twin reflection matrix
 c
       reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
 c
-	  n_variant=12
+      n_variant=12
 c
 c              scalars
 c
@@ -4429,14 +4432,44 @@ c
       cc_props%st_it(1) = inc_props%st_it(1)
       cc_props%st_it(2) = inc_props%st_it(2)
       cc_props%st_it(3) = inc_props%st_it(3)
-      call mm10_a_copy_vector( cc_props%g, inc_props%rotation_g, 9 )
-      call mm10_a_copy_vector( cc_props%ms, inc_props%ms,
-     &                         6*max_slip_sys )
-      call mm10_a_copy_vector( cc_props%qs, inc_props%qs,
-     &                         3*max_slip_sys )
+c
+c     Updating orientation
+c
+      cc_props%g = matmul(transpose(reflection_twin),
+     &             matmul(inc_props%rotation_g,reflection_twin))
+c
+c     Creating 6x6 version of reflection matrix
+c
+      call mm10_rt2rve( reflection_twin,reflection_twin_6 )
+c
+c     Creating 3x3 version of reflection matrix to rotate qs
+c
+      call mm10_rt2rvw( reflection_twin,reflection_twin_s )
+c
+c     Updating ms & qs for twin
+c
+      do index_i=1,max_slip_sys
+        call mm10_a_mult_type_2( cc_props%ms(1:6,index_i), 
+     &                          reflection_twin_6,
+     &                          inc_props%ms(1:6,index_i))
+        call mm10_a_mult_type_3( cc_props%qs(1:3,index_i), 
+     &                          reflection_twin_s,
+     &                          inc_props%qs(1:3,index_i))
+      end do
+c
+c     Updating stiffness for twin
+c
+      cc_props%stiffness=matmul(reflection_twin_6,
+     &                   matmul(inc_props%init_elast_stiff,
+     &                   transpose(reflection_twin_6)))
+c      call mm10_a_copy_vector( cc_props%g, inc_props%rotation_g, 9 )
+c      call mm10_a_copy_vector( cc_props%ms, inc_props%ms,
+c     &                         6*max_slip_sys )
+c      call mm10_a_copy_vector( cc_props%qs, inc_props%qs,
+c     &                         3*max_slip_sys )
       call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
      &                         3*max_slip_sys )
-      call mm10_a_copy_vector( cc_props%stiffness,
-     &                         inc_props%init_elast_stiff, 36 )
+c      call mm10_a_copy_vector( cc_props%stiffness,
+c     &                         inc_props%init_elast_stiff, 36 )
       return
       end subroutine

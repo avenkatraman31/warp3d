@@ -2333,11 +2333,17 @@ c                 Debug routine, dump the definition to STDOUT
 c
             end subroutine
       end module crystal_data
+c
+c
+c
 c     ***************************************************************
 c     *    module twin_variants                                      *
 c     *    tiny module to hold twin normals; used in                *
 c     *    mm10_init_cc_props_twin to rotate stiffness,ms,qc,qs,g   *
 c     ***************************************************************
+c
+c
+c
       module twin_variants
       double precision, dimension(12,3) :: n_twins
       double precision, dimension(12,3,3) :: reflection_twins
