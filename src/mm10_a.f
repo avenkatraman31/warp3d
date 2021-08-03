@@ -4462,14 +4462,8 @@ c
       cc_props%stiffness=matmul(reflection_twin_6,
      &                   matmul(inc_props%init_elast_stiff,
      &                   transpose(reflection_twin_6)))
-c      call mm10_a_copy_vector( cc_props%g, inc_props%rotation_g, 9 )
-c      call mm10_a_copy_vector( cc_props%ms, inc_props%ms,
-c     &                         6*max_slip_sys )
-c      call mm10_a_copy_vector( cc_props%qs, inc_props%qs,
-c     &                         3*max_slip_sys )
       call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
      &                         3*max_slip_sys )
-c      call mm10_a_copy_vector( cc_props%stiffness,
-c     &                         inc_props%init_elast_stiff, 36 )
+c
       return
       end subroutine
