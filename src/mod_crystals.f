@@ -58,6 +58,8 @@ c
         logical :: solver, strategy, debug, gpall, alter_mode
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
+        ! logical to determine twinning
+        logical :: twinned
       end type
 c
       type :: crystal_state

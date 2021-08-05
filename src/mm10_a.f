@@ -68,6 +68,12 @@ c
       logical :: debug, locdebug, mat_debug
       equivalence( tang_avg, tang_avg_vec )
 c
+c                 locals for twinning
+c
+      type(crystal_props) :: cc_props_twin
+      type(crystal_state) :: cc_n_twin, cc_np1_twin
+c
+c
       debug = .false.
 c
       if( debug ) write (iout,*) ".... entering mm10"
@@ -212,6 +218,11 @@ c
       double precision :: work_vec1(9), work_vec2(6), work_gradfe(27),
      &                    work_R(9), user_initial_stresses(6)
 c
+c     Twin variant and max twin volume fraction
+c
+      integer :: max_twin_id
+      double precision :: max_f_twin
+c     
       call mm10_init_cc_props( local_work%c_props(iloop,c),
      &              local_work%angle_type(iloop),
      &              local_work%angle_convention(iloop),
@@ -241,6 +252,26 @@ c
       call mm10_copy_cc_hist( crys_no, span, history_n(iloop,1),
      &         work_gradfe,  work_R, ! both readonly,
      &         cc_props, cc_n )
+c
+c
+c     Checking if twin volume fraction has hit critical value - 2%
+c     Instantiating cc_props_twin if it has
+c
+      if(cc_n%u(10).gt.two*ptone**3.d0) then
+        local_work%c_props(iloop,c)%twinned = .true.
+        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
+     &                        max_f_twin,max_twin_id)
+        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
+     &              local_work%angle_type(iloop),
+     &              local_work%angle_convention(iloop),
+     &              max_twin_id,
+     &              local_work%debug_flag(iloop),
+     &              cc_props_twin )
+      if (.not. local_work%c_props(iloop,c)%twinned ) then
+        print*, cc_props_twin%stiffness
+      endif
+        local_work%c_props(iloop,c)%twinned = .true.
+      endif
 c
       work_vec1(1:9) = local_work%rot_blk_n1(iloop,1:9,gp)
       work_vec2(1:6) = uddt(iloop,1:6)
@@ -594,7 +625,7 @@ c ***** START: Add new Constitutive Models into this block *****
          call mm10_init_arfr( props, work_hist1, work_hist2 )
         case( 9 ) ! DJGM
          call mm10_init_djgm( props, work_hist1, work_hist2 )
-        case( 10 ) ! DJGM
+        case( 10 ) ! avoche
          call mm10_init_avoche( props, work_hist1, work_hist2 )
         case default
          call mm10_unknown_hard_error( props )
@@ -1933,6 +1964,7 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
+      cc_props%twinned     = inc_props%twinned
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -4230,3 +4262,301 @@ c
       return
 c
       end
+c
+c
+      subroutine mm10_a_mult_type_6( a, b, c )
+      implicit none
+      double precision :: a(6,6), b(6,6), c(6,6)
+      integer :: i, j,k
+      double precision :: zero
+      zero=0.d0
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64
+c
+c                    c = a*b
+c
+      c(1:6,1:6)=zero
+      do i = 1 , 6
+       do j = 1, 6
+        do k=1,6
+           c(i,j) = c(i,j) + a(i,k)*b(k,j)
+        end do
+       end do
+      end do
+c
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_max_vector                 *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/22/2021 rhd               *
+c     *                                                              *
+c     *                     return the max value of an array         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mm10_a_max_vector(v,n,max_v,max_n)
+      implicit none
+      integer, intent(in) :: n
+      double precision, dimension(n) :: v(n)
+      double precision :: max_v
+      integer, intent(out) :: max_n
+      integer :: i
+      max_v=v(1)
+      max_n=1
+      do i=2,n
+        if (v(i).gt.max_v) then
+            max_v=v(i)
+            max_n=i
+        endif
+      end do
+      return
+      end subroutine mm10_a_max_vector
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_init_cc_props_twin           *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/20/2021                   *
+c     *                                                              *
+c     *    Copy properties over from local_work into the update      *
+c     *    structure for the twin upon twin nucleation               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_init_cc_props_twin( inc_props, atype, aconv,
+     &                                variant, debug, cc_props )
+      use mm10_defs
+      use mm10_constants
+      use twin_variants
+      implicit none
+      include 'include_sig_up'
+      integer :: atype, aconv, variant,n_variant
+      integer :: index_i
+      logical :: debug
+      type(crystal_properties) :: inc_props
+      type(crystal_props) :: cc_props
+      double precision, dimension(3,3) :: reflection_twin,
+     &                                    reflection_twin_s,
+     &                                    temp_33
+      double precision, dimension(6,6) :: reflection_twin_6,
+     &                                     temp_66
+c
+c        get the twin reflection matrix
+c
+      reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
+c
+      n_variant=12
+c
+c              scalars
+c
+      cc_props%rate_n      = inc_props%rateN
+      cc_props%tau_hat_y   = inc_props%tauHat_y
+      cc_props%G_0_y       = inc_props%Go_y
+      cc_props%burgers     = inc_props%burgers
+      cc_props%p_v         = inc_props%p_v
+      cc_props%q_v         = inc_props%q_v
+      cc_props%boltzman    = inc_props%boltzman
+      cc_props%theta_0     = inc_props%theta_o
+      cc_props%eps_dot_0_v = inc_props%eps_dot_o_v
+      cc_props%eps_dot_0_y = inc_props%eps_dot_o_y
+      cc_props%p_y         = inc_props%p_y
+      cc_props%q_y         = inc_props%q_y
+      cc_props%tau_a       = inc_props%tau_a
+      cc_props%tau_hat_v   = inc_props%tauHat_v
+      cc_props%G_0_v       = inc_props%Go_v
+      cc_props%k_0         = inc_props%k_o
+      cc_props%mu_0        = inc_props%mu_o
+      cc_props%D_0         = inc_props%D_o
+      cc_props%T_0         = inc_props%t_o
+      cc_props%tau_y       = inc_props%tau_y
+      cc_props%tau_v       = inc_props%tau_v
+      cc_props%voche_m     = inc_props%voche_m
+      cc_props%iD_v        = inc_props%iD_v
+      cc_props%u1          = inc_props%u1
+      cc_props%u2          = inc_props%u2
+      cc_props%u3          = inc_props%u3
+      cc_props%u4          = inc_props%u4
+      cc_props%u5          = inc_props%u5
+      cc_props%u6          = inc_props%u6
+      cc_props%u7          = inc_props%u7
+      cc_props%u8          = inc_props%u8
+      cc_props%u9          = inc_props%u9
+      cc_props%u10         = inc_props%u10
+      cc_props%solver      = inc_props%solver
+      cc_props%strategy    = inc_props%strategy
+      cc_props%gpall       = inc_props%gpall
+      cc_props%gpp         = inc_props%gpp
+      cc_props%method      = inc_props%method
+      cc_props%miter       = inc_props%miter
+      cc_props%atol        = inc_props%atol
+      cc_props%atol1       = inc_props%atol1
+      cc_props%rtol        = inc_props%rtol
+      cc_props%rtol1       = inc_props%rtol1
+      cc_props%xtol        = inc_props%xtol
+      cc_props%xtol1       = inc_props%xtol1
+      cc_props%alter_mode  = inc_props%alter_mode
+      cc_props%twinned     = inc_props%twinned
+c
+      cc_props%cp_001 = inc_props%cp_001
+      cc_props%cp_002 = inc_props%cp_002
+      cc_props%cp_003 = inc_props%cp_003
+      cc_props%cp_004 = inc_props%cp_004
+      cc_props%cp_005 = inc_props%cp_005
+      cc_props%cp_006 = inc_props%cp_006
+      cc_props%cp_007 = inc_props%cp_007
+      cc_props%cp_008 = inc_props%cp_008
+      cc_props%cp_009 = inc_props%cp_009
+      cc_props%cp_010 = inc_props%cp_010
+      cc_props%cp_011 = inc_props%cp_011
+      cc_props%cp_012 = inc_props%cp_012
+      cc_props%cp_013 = inc_props%cp_013
+      cc_props%cp_014 = inc_props%cp_014
+      cc_props%cp_015 = inc_props%cp_015
+      cc_props%cp_016 = inc_props%cp_016
+      cc_props%cp_017 = inc_props%cp_017
+      cc_props%cp_018 = inc_props%cp_018
+      cc_props%cp_019 = inc_props%cp_019
+      cc_props%cp_020 = inc_props%cp_020
+      cc_props%cp_021 = inc_props%cp_021
+      cc_props%cp_022 = inc_props%cp_022
+      cc_props%cp_023 = inc_props%cp_023
+      cc_props%cp_024 = inc_props%cp_024
+      cc_props%cp_025 = inc_props%cp_025
+      cc_props%cp_026 = inc_props%cp_026
+      cc_props%cp_027 = inc_props%cp_027
+      cc_props%cp_028 = inc_props%cp_028
+      cc_props%cp_029 = inc_props%cp_029
+      cc_props%cp_030 = inc_props%cp_030
+      cc_props%cp_031 = inc_props%cp_031
+      cc_props%cp_032 = inc_props%cp_032
+      cc_props%cp_033 = inc_props%cp_033
+      cc_props%cp_034 = inc_props%cp_034
+      cc_props%cp_035 = inc_props%cp_035
+      cc_props%cp_036 = inc_props%cp_036
+      cc_props%cp_037 = inc_props%cp_037
+      cc_props%cp_038 = inc_props%cp_038
+      cc_props%cp_039 = inc_props%cp_039
+      cc_props%cp_040 = inc_props%cp_040
+      cc_props%cp_041 = inc_props%cp_041
+      cc_props%cp_042 = inc_props%cp_042
+      cc_props%cp_043 = inc_props%cp_043
+      cc_props%cp_044 = inc_props%cp_044
+      cc_props%cp_045 = inc_props%cp_045
+      cc_props%cp_046 = inc_props%cp_046
+      cc_props%cp_047 = inc_props%cp_047
+      cc_props%cp_048 = inc_props%cp_048
+      cc_props%cp_049 = inc_props%cp_049
+      cc_props%cp_050 = inc_props%cp_050
+      cc_props%cp_051 = inc_props%cp_051
+      cc_props%cp_052 = inc_props%cp_052
+      cc_props%cp_053 = inc_props%cp_053
+      cc_props%cp_054 = inc_props%cp_054
+      cc_props%cp_055 = inc_props%cp_055
+      cc_props%cp_056 = inc_props%cp_056
+      cc_props%cp_057 = inc_props%cp_057
+      cc_props%cp_058 = inc_props%cp_058
+      cc_props%cp_059 = inc_props%cp_059
+      cc_props%cp_060 = inc_props%cp_060
+      cc_props%cp_061 = inc_props%cp_061
+      cc_props%cp_062 = inc_props%cp_062
+      cc_props%cp_063 = inc_props%cp_063
+      cc_props%cp_064 = inc_props%cp_064
+      cc_props%cp_065 = inc_props%cp_065
+      cc_props%cp_066 = inc_props%cp_066
+      cc_props%cp_067 = inc_props%cp_067
+      cc_props%cp_068 = inc_props%cp_068
+      cc_props%cp_069 = inc_props%cp_069
+      cc_props%cp_070 = inc_props%cp_070
+      cc_props%cp_071 = inc_props%cp_071
+      cc_props%cp_072 = inc_props%cp_072
+      cc_props%cp_073 = inc_props%cp_073
+      cc_props%cp_074 = inc_props%cp_074
+      cc_props%cp_075 = inc_props%cp_075
+      cc_props%cp_076 = inc_props%cp_076
+      cc_props%cp_077 = inc_props%cp_077
+      cc_props%cp_078 = inc_props%cp_078
+      cc_props%cp_079 = inc_props%cp_079
+      cc_props%cp_080 = inc_props%cp_080
+      cc_props%cp_081 = inc_props%cp_081
+      cc_props%cp_082 = inc_props%cp_082
+      cc_props%cp_083 = inc_props%cp_083
+      cc_props%cp_084 = inc_props%cp_084
+      cc_props%cp_085 = inc_props%cp_085
+      cc_props%cp_086 = inc_props%cp_086
+      cc_props%cp_087 = inc_props%cp_087
+      cc_props%cp_088 = inc_props%cp_088
+      cc_props%cp_089 = inc_props%cp_089
+      cc_props%cp_090 = inc_props%cp_090
+      cc_props%cp_091 = inc_props%cp_091
+      cc_props%cp_092 = inc_props%cp_092
+      cc_props%cp_093 = inc_props%cp_093
+      cc_props%cp_094 = inc_props%cp_094
+      cc_props%cp_095 = inc_props%cp_095
+      cc_props%cp_096 = inc_props%cp_096
+      cc_props%cp_097 = inc_props%cp_097
+      cc_props%cp_098 = inc_props%cp_098
+      cc_props%cp_099 = inc_props%cp_099
+      cc_props%cp_100 = inc_props%cp_100
+c
+      cc_props%angle_type       = atype
+      cc_props%angle_convention = aconv
+      cc_props%nslip            = inc_props%nslip-n_variant!accounting for only slip 
+c
+      cc_props%h_type           = inc_props%h_type
+      cc_props%num_hard         = inc_props%num_hard-n_variant
+      cc_props%tang_calc        = inc_props%tang_calc
+      cc_props%debug            = debug
+      cc_props%s_type           = 10!HCP18
+      cc_props%cnum             = inc_props%cnum
+c
+c                    vectors and arrays
+c
+      cc_props%st_it(1) = inc_props%st_it(1)
+      cc_props%st_it(2) = inc_props%st_it(2)
+      cc_props%st_it(3) = inc_props%st_it(3)
+c
+c     Updating orientation
+c
+      cc_props%g = matmul(transpose(reflection_twin),
+     &             matmul(inc_props%rotation_g,reflection_twin))
+c
+c     Creating 6x6 version of reflection matrix
+c
+      call mm10_rt2rve( reflection_twin,reflection_twin_6 )
+c
+c     Creating 3x3 version of reflection matrix to rotate qs
+c
+      call mm10_rt2rvw( reflection_twin,reflection_twin_s )
+c
+c     Updating ms & qs for twin
+c
+      do index_i=1,max_slip_sys
+        call mm10_a_mult_type_2( cc_props%ms(1:6,index_i), 
+     &                          reflection_twin_6,
+     &                          inc_props%ms(1:6,index_i))
+        call mm10_a_mult_type_3( cc_props%qs(1:3,index_i), 
+     &                          reflection_twin_s,
+     &                          inc_props%qs(1:3,index_i))
+      end do
+c
+c     Updating stiffness for twin
+c
+      call mm10_a_mult_type_6(inc_props%init_elast_stiff,
+     &      transpose(reflection_twin_6),
+     &      temp_66)
+      call mm10_a_mult_type_6(reflection_twin_6,
+     &      temp_66,
+     &      cc_props%stiffness)
+      call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
+     &                         3*max_slip_sys )
+c
+      return
+      end subroutine
