@@ -40,6 +40,11 @@ c
      &  nslip, num_hard, cur_slip, cur_hard
       logical :: local_debug, use_max
 c
+c        Twinned grain state variable locations
+c
+      integer :: loc_cauchy_twin, loc_euler_twin, loc_pls_R_twin, 
+     &  loc_uddt_twin,loc_els_eps_twin, loc_cur_slip_incr_twin, 
+     &  loc_tau_tilde_twin, loc_tt_rate_twin, loc_ep_twin, loc_ed_twin
 c
 c              the top part of the history vectory contains data
 c              not dependent on the number of crystals defined
@@ -73,7 +78,7 @@ c
       call iodevn( indev, outdev, idummy, jdummy )
 c
       num_common_indexes = 5
-      num_crystal_terms  = 11
+      num_crystal_terms  = 21
 c
 c                run through materials employed in model.
 c                find the CP materials, determine number of variables
@@ -230,11 +235,31 @@ c                 16-21 -- cp strain rate tensor 6x1
 c                 22-27 -- diff strain rate tensor 6x1
 c
 c
+c                |<- crystal term for twinned portion of the grain** #
+c             %  12 -- unrotated Cauchy stress** ( 6 x 1 )
+c             %  13 -- updated (current) Euler angles** ( 3 x 1 )
+c             %  14 -- plastic rotation tensor** ( 3 x 3 )
+c             %  15 -- uddt. unrotation deformation tensor** ( 6 x 1 )
+c             %  16 -- elastic lattice strain tensor** ( 6 x 1 )
+c                17 -- current slip increment for each slip system**
+c                     ( max_slip_sys x 1 )
+c                18 -- tau_tilde** ( max_uhard x 1 )
+c                19 -- tt_rate**. ( max_uhard x 1 ). rate of change of
+c                     hardening variables. used for prediction/init of
+c                     local NR
+c                20 -- ep**. ( 6 x 1 ). accumulated plastic strain
+c                21 -- ed**. ( 6 x 1 ). diffusional rate ??
+c
       length_crys_hist(1) = 6
       length_crys_hist(2) = 3
       length_crys_hist(3) = 9
       length_crys_hist(4) = 6
       length_crys_hist(5) = 6
+      length_crys_hist(12) = 6
+      length_crys_hist(13) = 3
+      length_crys_hist(14) = 9
+      length_crys_hist(15) = 6
+      length_crys_hist(16) = 6
       if( use_max ) then
         length_crys_hist(6) = max_slip_sys
         length_crys_hist(7) = max_uhard
@@ -242,6 +267,11 @@ c
         length_crys_hist(9) = max_uhard
         length_crys_hist(10) = 6
         length_crys_hist(11) = 6
+        length_crys_hist(17) = max_slip_sys
+        length_crys_hist(18) = max_uhard
+        length_crys_hist(19) = max_uhard
+        length_crys_hist(20) = 6
+        length_crys_hist(21) = 6
       else
         length_crys_hist(6) = nslip
         length_crys_hist(7) = num_hard
@@ -249,6 +279,11 @@ c
         length_crys_hist(9) = num_hard
         length_crys_hist(10) = 6
         length_crys_hist(11) = 6
+        length_crys_hist(17) = nslip
+        length_crys_hist(18) = num_hard
+        length_crys_hist(19) = num_hard
+        length_crys_hist(20) = 6
+        length_crys_hist(21) = 6
       end if
 c
 c              length of one crystal history
@@ -286,6 +321,19 @@ c
         loc_tt_rate       = loc_user_hist      + length_crys_hist(8)
         loc_ep            = loc_tt_rate        + length_crys_hist(9)
         loc_ed            = loc_ep             + length_crys_hist(10)
+        loc_cauchy_twin   = loc_ed             + length_crys_hist(11)
+        loc_euler_twin    = loc_cauchy_twin    + length_crys_hist(12)
+        loc_pls_R_twin    = loc_euler_twin     + length_crys_hist(13)
+        loc_uddt_twin     = loc_pls_R_twin     + length_crys_hist(14)
+        loc_els_eps_twin  = loc_uddt_twin      + length_crys_hist(15)
+        loc_cur_slip_incr_twin = loc_els_eps_twin +
+     &                           length_crys_hist(16)
+        loc_tau_tilde_twin     = loc_cur_slip_incr_twin +
+     &                           length_crys_hist(17)
+        loc_tt_rate_twin       = loc_tau_tilde_twin + 
+     &                           length_crys_hist(18)
+        loc_ep_twin       = loc_tt_rate_twin   + length_crys_hist(19)
+        loc_ed_twin       = loc_ep_twin        + length_crys_hist(20)
 c
         index_crys_hist(crystal,1,1) = loc_cauchy
         index_crys_hist(crystal,1,2) = loc_cauchy +
@@ -327,6 +375,46 @@ c
         index_crys_hist(crystal,11,1) = loc_ed
         index_crys_hist(crystal,11,2) = loc_ed   +
      &                                 length_crys_hist(11)-1
+c
+        index_crys_hist(crystal,12,1) = loc_cauchy_twin
+        index_crys_hist(crystal,12,2) = loc_cauchy_twin +
+     &                                 length_crys_hist(12)-1
+c
+        index_crys_hist(crystal,13,1) = loc_euler_twin
+        index_crys_hist(crystal,13,2) = loc_euler_twin + 
+     &                                  length_crys_hist(13)-1
+c
+        index_crys_hist(crystal,14,1) = loc_pls_R_twin
+        index_crys_hist(crystal,14,2) = loc_pls_R_twin + 
+     &                                  length_crys_hist(14)-1
+c
+        index_crys_hist(crystal,15,1) = loc_uddt_twin
+        index_crys_hist(crystal,15,2) = loc_uddt_twin + 
+     &                                  length_crys_hist(15)-1
+c
+        index_crys_hist(crystal,16,1) = loc_els_eps_twin
+        index_crys_hist(crystal,16,2) = loc_els_eps_twin +
+     &                                 length_crys_hist(16)-1
+c
+        index_crys_hist(crystal,17,1) = loc_cur_slip_incr_twin
+        index_crys_hist(crystal,17,2) = loc_cur_slip_incr_twin +
+     &                                 length_crys_hist(17)-1
+c
+        index_crys_hist(crystal,18,1) = loc_tau_tilde_twin
+        index_crys_hist(crystal,18,2) = loc_tau_tilde_twin +
+     &                                 length_crys_hist(18)-1
+c
+        index_crys_hist(crystal,19,1) = loc_tt_rate_twin
+        index_crys_hist(crystal,19,2) = loc_tt_rate_twin   +
+     &                                 length_crys_hist(19)-1
+c
+        index_crys_hist(crystal,20,1) = loc_ep_twin
+        index_crys_hist(crystal,20,2) = loc_ep_twin   +
+     &                                 length_crys_hist(20)-1
+c
+        index_crys_hist(crystal,21,1) = loc_ed_twin
+        index_crys_hist(crystal,21,2) = loc_ed_twin   +
+     &                                 length_crys_hist(21)-1
 c
 c                consistency check
 c

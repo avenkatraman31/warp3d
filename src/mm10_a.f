@@ -253,12 +253,15 @@ c
      &         work_gradfe,  work_R, ! both readonly,
      &         cc_props, cc_n )
 c
+c     At initial step, set twinned = .false.
+c
+      if (local_work%step .eq. 1) cc_n%twinned = .false.
 c
 c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin if it has
 c
-      if(cc_n%u(10).gt.two*ptone**3.d0) then
-        local_work%c_props(iloop,c)%twinned = .true.
+      if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
+     &   (.not. cc_n%twinned)) then
         call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
@@ -267,10 +270,9 @@ c
      &              max_twin_id,
      &              local_work%debug_flag(iloop),
      &              cc_props_twin )
-      if (.not. local_work%c_props(iloop,c)%twinned ) then
+
         print*, cc_props_twin%stiffness
-      endif
-        local_work%c_props(iloop,c)%twinned = .true.
+        cc_n%twinned=.true.
       endif
 c
       work_vec1(1:9) = local_work%rot_blk_n1(iloop,1:9,gp)
@@ -535,6 +537,121 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_init_cc_hist0( props, angles, history,
+     &                               user_initial_stresses, span,
+     &                               crys_no, hist_size )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      integer :: span, crys_no, hist_size
+      double precision :: history(span,*), angles(*),
+     &                    user_initial_stresses(*)
+c
+      integer :: sh, eh, sh2, eh2, len1, len2
+      double precision :: work_hist1(hist_size),
+     &                    work_hist2(hist_size) ! automatics
+c
+c              Stress
+c
+      sh = index_crys_hist(crys_no,1,1)
+      eh = index_crys_hist(crys_no,1,2)
+      history(1,sh:eh) = zero
+      history(1,sh+0) = user_initial_stresses(1)
+      history(1,sh+1) = user_initial_stresses(2)
+      history(1,sh+2) = user_initial_stresses(3)
+      history(1,sh+3) = user_initial_stresses(4)
+      history(1,sh+4) = user_initial_stresses(5)
+      history(1,sh+5) = user_initial_stresses(6)
+c
+c              Angles
+c
+      sh = index_crys_hist(crys_no,2,1)
+      history(1,sh+0) = angles(1)
+      history(1,sh+1) = angles(2)
+      history(1,sh+2) = angles(3)
+c
+c              Rotation
+c
+      sh = index_crys_hist(crys_no,3,1)
+      history(1,sh+0) = one
+      history(1,sh+1) = zero
+      history(1,sh+2) = zero
+      history(1,sh+3) = zero
+      history(1,sh+4) = one
+      history(1,sh+5) = zero
+      history(1,sh+6) = zero
+      history(1,sh+7) = zero
+      history(1,sh+8) = one
+c
+c              D
+c
+      sh = index_crys_hist(crys_no,4,1)
+      eh = index_crys_hist(crys_no,4,2)
+      history(1,sh:eh) = zero
+c
+c              eps
+c
+      sh = index_crys_hist(crys_no,5,1)
+      eh = index_crys_hist(crys_no,5,2)
+      history(1,sh:eh) = zero
+c
+c              slip_incs
+c
+      sh = index_crys_hist(crys_no,6,1)
+      eh = index_crys_hist(crys_no,6,2)
+      history(1,sh:eh) = zero
+c
+c              Hardening
+c
+      sh   = index_crys_hist(crys_no,7,1)
+      eh   = index_crys_hist(crys_no,7,2)
+      sh2  = index_crys_hist(crys_no,8,1)
+      eh2  = index_crys_hist(crys_no,8,2)
+      len1 = eh - sh + 1
+      len2 = eh2 - sh2 + 1
+c
+c ***** START: Add new Constitutive Models into this block *****
+      select case( props%h_type ) ! hardening model
+        case( 1 ) ! simple Voche
+          call mm10_init_voche( props, work_hist1, work_hist2 )
+        case( 2 ) ! MTS
+          call mm10_init_mts( props, work_hist1, work_hist2 )
+        case( 3 ) ! User
+         call mm10_init_user( props, work_hist1, work_hist2 )
+        case( 4 ) ! ORNL
+         call mm10_init_ornl( props, work_hist1, work_hist2 )
+        case( 7 ) ! mrr
+         call mm10_init_mrr( props, work_hist1, work_hist2 )
+        case( 8 ) ! Armstrong-Frederick
+         call mm10_init_arfr( props, work_hist1, work_hist2 )
+        case( 9 ) ! DJGM
+         call mm10_init_djgm( props, work_hist1, work_hist2 )
+        case( 10 ) ! avoche
+         call mm10_init_avoche( props, work_hist1, work_hist2 )
+        case default
+         call mm10_unknown_hard_error( props )
+      end select
+c ****** END: Add new Constitutive Models into this block ******
+c
+      history(1,sh:eh)   = work_hist1(1:len1)
+      history(1,sh2:eh2) = work_hist2(1:len2)
+c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_init_cc_hist_twin0           *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 07/30/2021 rhd              *
+c     *                                                              *
+c     *    Initialize a twin using crystal_state :: n                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_init_cc_hist_twin0( props, angles, history,
      &                               user_initial_stresses, span,
      &                               crys_no, hist_size )
       use mm10_defs
@@ -1964,7 +2081,7 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
-      cc_props%twinned     = inc_props%twinned
+      cc_props%twinning    = inc_props%twinning
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -2162,12 +2279,11 @@ c ----------------------------------------------------------------------
                 tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%cp_006
 c
-      if( props%s_type .eq. 10 .or. props%s_type .eq. 11 ) then
-
+      if( props%s_type .eq. 10) then
                 tau_tilde(7:18) = props%cp_007
-      if( props%nslip .eq. 30) then
+      elseif( props%s_type .eq. 11 ) then
+                tau_tilde(7:18) = props%cp_007
                 tau_tilde(19:30) = props%cp_008
-      endif
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -2734,6 +2850,109 @@ c
       return
 c
  9000 format('>> FATAL ERROR: mm10_copy_cc_hist @ ',i2 )
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_copy_cc_hist_twin            *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 08/01/2021                  *
+c     *                                                              *
+c     *    Initialize the state n structure for twinned portion      *
+c     *                                            of the grain      *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_copy_cc_hist_twin( crys_no, span, history, 
+     &                              gradfe,R, props, n)
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      integer :: crys_no, span, sh, eh
+c
+      double precision :: history(span,*), gradfe(3,3,3), R(3,3)
+      type(crystal_props) :: props
+      type(crystal_state) :: n
+c
+      integer :: len1, len2
+c!DIR$ ASSUME_ALIGNED history:64, gradfe:64, R:64
+c
+      len1 = props%num_hard
+c
+      call mm10_a_copy_vector( n%R, R, 9 )
+      call mm10_a_copy_vector( n%gradFeinv, gradfe, 27 )
+c
+c              scalars only used at n+1
+c
+      n%temp      = zero
+      n%tinc      = zero
+      n%dg        = zero
+      n%tau_v     = zero
+      n%tau_y     = zero
+      n%mu_harden = zero
+c
+      sh = index_crys_hist(crys_no,12,1)
+      eh = index_crys_hist(crys_no,12,2)
+      n%stress(1:6) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,13,1)
+      eh = index_crys_hist(crys_no,13,2)
+      n%euler_angles(1) = history(1,sh+0)
+      n%euler_angles(2) = history(1,sh+1)
+      n%euler_angles(3) = history(1,sh+2)
+
+c
+      sh = index_crys_hist(crys_no,14,1)
+      eh = index_crys_hist(crys_no,14,2)
+      n%Rp(1,1) = history(1,sh+0)
+      n%Rp(2,1) = history(1,sh+1)
+      n%Rp(3,1) = history(1,sh+2)
+      n%Rp(1,2) = history(1,sh+3)
+      n%Rp(2,2) = history(1,sh+4)
+      n%Rp(3,2) = history(1,sh+5)
+      n%Rp(1,3) = history(1,sh+6)
+      n%Rp(2,3) = history(1,sh+7)
+      n%Rp(3,3) = history(1,sh+8)
+c
+      sh = index_crys_hist(crys_no,15,1)
+      eh = index_crys_hist(crys_no,15,2)
+      n%D(1:6) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,16,1)
+      eh = index_crys_hist(crys_no,16,2)
+      n%eps(1:6) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,17,1)
+      eh = index_crys_hist(crys_no,17,2)
+      len2 = eh - sh + 1
+      if( len2 .ne. length_crys_hist(6) ) then ! sanity check
+         write(props%out,9000) 1
+         call die_abort
+      end if
+      n%slip_incs(1:len2-1) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,18,1)
+      eh = index_crys_hist(crys_no,18,2)
+      n%tau_tilde(1:len1) = history(1,sh:sh-1+len1)
+c
+      sh = index_crys_hist(crys_no,19,1)
+      eh = index_crys_hist(crys_no,19,2)
+      n%tt_rate(1:len1) = history(1,sh:sh-1+len1)
+c
+      sh = index_crys_hist(crys_no,20,1)
+      eh = index_crys_hist(crys_no,20,2)
+      n%ep(1:6) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,21,1)
+      eh = index_crys_hist(crys_no,21,2)
+      n%ed(1:6) = history(1,sh:eh)
+c
+      return
+c
+ 9000 format('>> FATAL ERROR: mm10_copy_cc_hist_twin @ ',i2 )
       end
 c
 c
@@ -3902,7 +4121,7 @@ c
 c  
 c    Check if twinning has reached critical volume fraction
 c
-      if(props%s_type .eq. 10 .or. props%s_type .eq. 11) then
+      if(props%s_type .eq. 11 .and. props%twinning) then
         np1%u(10) = n%u(10)+sum(np1%slip_incs(19:30))
       endif
 c
@@ -4302,7 +4521,7 @@ c
       subroutine mm10_a_max_vector(v,n,max_v,max_n)
       implicit none
       integer, intent(in) :: n
-      double precision, dimension(n) :: v(n)
+      double precision, dimension(n) :: v
       double precision :: max_v
       integer, intent(out) :: max_n
       integer :: i
@@ -4316,6 +4535,35 @@ c
       end do
       return
       end subroutine mm10_a_max_vector
+c
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_transpose                  *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 7/22/2021 rhd               *
+c     *                                                              *
+c     *                     return the transpose of a matrix         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mm10_a_transpose(v,n,m,vt)
+      implicit none
+      integer, intent(in) :: n,m
+      double precision, dimension(n,m):: v
+      double precision, dimension(m,n) :: vt
+      integer :: i,j
+      do i=1,n
+        do j=1,m
+            vt(j,i)=v(i,j)
+        end do
+      end do
+      return
+      end subroutine mm10_a_transpose
 c
 c
 c     ****************************************************************
@@ -4345,13 +4593,29 @@ c
       type(crystal_props) :: cc_props
       double precision, dimension(3,3) :: reflection_twin,
      &                                    reflection_twin_s,
+     &                                    reflection_twin_t,
      &                                    temp_33
       double precision, dimension(6,6) :: reflection_twin_6,
+     &                                    reflection_twin_6_t,
      &                                     temp_66
 c
 c        get the twin reflection matrix
 c
       reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
+c
+c     Creating 6x6 version of reflection matrix
+c
+      call mm10_rt2rve( reflection_twin,reflection_twin_6 )
+c
+c     Creating 3x3 version of reflection matrix to rotate qs
+c
+      call mm10_rt2rvw( reflection_twin,reflection_twin_s )
+c
+c     Getting transpose of reflection_twin matrix
+c
+      call mm10_a_transpose(reflection_twin,3,3,reflection_twin_t)
+c
+      call mm10_a_transpose(reflection_twin_6,6,6,reflection_twin_6_t)
 c
       n_variant=12
 c
@@ -4403,7 +4667,7 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
-      cc_props%twinned     = inc_props%twinned
+      cc_props%twinning     = inc_props%twinning
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -4525,16 +4789,10 @@ c
 c
 c     Updating orientation
 c
-      cc_props%g = matmul(transpose(reflection_twin),
-     &             matmul(inc_props%rotation_g,reflection_twin))
-c
-c     Creating 6x6 version of reflection matrix
-c
-      call mm10_rt2rve( reflection_twin,reflection_twin_6 )
-c
-c     Creating 3x3 version of reflection matrix to rotate qs
-c
-      call mm10_rt2rvw( reflection_twin,reflection_twin_s )
+      call mm10_a_mult_type_1(temp_33,inc_props%rotation_g,
+     &                        reflection_twin)
+      call mm10_a_mult_type_1(cc_props%g,reflection_twin_t,
+     &                        temp_33)    
 c
 c     Updating ms & qs for twin
 c
@@ -4550,7 +4808,7 @@ c
 c     Updating stiffness for twin
 c
       call mm10_a_mult_type_6(inc_props%init_elast_stiff,
-     &      transpose(reflection_twin_6),
+     &      reflection_twin_6_t,
      &      temp_66)
       call mm10_a_mult_type_6(reflection_twin_6,
      &      temp_66,

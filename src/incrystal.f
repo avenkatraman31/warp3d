@@ -162,6 +162,27 @@ c
                    call errmsg(5,dumi,'C55',dumr,dumd)
              end if
 c
+c Twinning yes .or. no
+c
+       elseif(  matchs_exact('twin') ) then
+             if( .not. label(dumi) ) then
+                   call errmsg(364,dumi,dums,dumr,dumd)
+             else
+                   lab = ' '
+                   call entits(lab,nc)
+             end if
+             if( lab(1:nc) .eq. 'yes') then
+                   c_array(cnum)%twinning = .true.
+             elseif( lab(1:nc) .eq. 'no') then
+                   c_array(cnum)%twinning = .false.
+             elseif( lab(1:nc) .eq. 'on') then
+                   c_array(cnum)%twinning = .true.
+             elseif( lab(1:nc) .eq. 'off') then
+                   c_array(cnum)%twinning = .false.
+             else
+                   call errmsg(364,dumi,dums,dumr,dumd)
+             end if
+c
 c plastic parameters
 c
        elseif(  matchs_exact('harden_n') ) then

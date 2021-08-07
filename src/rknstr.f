@@ -1973,6 +1973,10 @@ c          alternative model flag
 c
         local_work%c_props(i,c)%alter_mode = c_array(cnum)%alter_mode
 c
+c          Twinning flag
+c
+        local_work%c_props(i,c)%twinning = c_array(cnum)%twinning
+c
       case( 4 )
 c
 c          reference rotation

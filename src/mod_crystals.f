@@ -58,8 +58,8 @@ c
         logical :: solver, strategy, debug, gpall, alter_mode
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
-        ! logical to determine twinning
-        logical :: twinned
+        ! Twinning flags
+        logical :: twinning
       end type
 c
       type :: crystal_state
@@ -79,6 +79,8 @@ c
         double precision, dimension(max_uhard) :: u
         double precision, dimension(6) :: ed, ep
         integer :: step, elem, gp, iter
+        ! Twinning flags
+        logical :: twinned
       end type
 c
 c              store integer indexes into history vector for a an
@@ -219,7 +221,9 @@ c                 Solver flags
                   logical :: solver, strategy, gpall, alter_mode
 c
                   logical :: valid
-
+c                 Twinning flags
+                  logical :: twinning
+c
             end type crystal
 c
             type(crystal), dimension(max_crystals) :: c_array
@@ -415,6 +419,8 @@ c            Solver parameters
                   c_array(num)%st_it(3) = -2
 c            Alternative model features, currently Voce only
                   c_array(num)%alter_mode = .false.
+c            Twinning initialization
+                  c_array(num)%twinning = .false.
 
             end subroutine
 c
@@ -2339,7 +2345,7 @@ c
 c
 c
 c     ***************************************************************
-c     *    module twin_variants                                      *
+c     *    module twin_variants                                     *
 c     *    tiny module to hold twin normals; used in                *
 c     *    mm10_init_cc_props_twin to rotate stiffness,ms,qc,qs,g   *
 c     ***************************************************************

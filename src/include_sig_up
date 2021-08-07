@@ -49,7 +49,7 @@ c              new variables to control local solvers inside mm10
             double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
             ! logical to determine twinning
-             logical :: twinned
+             logical :: twinning
       end type
 c
       type :: nonlinear_sigeps_work
