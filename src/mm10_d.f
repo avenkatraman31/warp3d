@@ -37,7 +37,7 @@ c
      &  loc_start, loc_cauchy, loc_euler, loc_pls_R, loc_uddt,
      &  loc_els_eps, loc_cur_slip_incr, loc_tau_tilde, loc_user_hist,
      &  loc_tt_rate, loc_ep, loc_ed, indev, outdev, idummy, jdummy,
-     &  nslip, num_hard, cur_slip, cur_hard
+     &  nslip, ntwin,num_hard, cur_slip, cur_hard,cur_twin
       logical :: local_debug, use_max
 c
 c        Twinned grain state variable locations
@@ -85,6 +85,7 @@ c                find the CP materials, determine number of variables
 c
       cur_slip = 0
       cur_hard = 0
+      cur_twin = 0
 c
       do i = 1, nummat
        if( matprp(9,i) /= 10 ) cycle
@@ -114,6 +115,8 @@ c                  couldn't do this earlier, so check here
      &             cur_slip = c_array(cnum)%nslip
               if( cur_hard < c_array(cnum)%num_hard )
      &             cur_hard = c_array(cnum)%num_hard
+              if( cur_twin < c_array(cnum)%ntwin )
+     &             cur_twin = c_array(cnum)%ntwin
             end do ! over k, crystals
         end do ! over j ( noelem)
       end do  ! over i, materials
@@ -132,17 +135,24 @@ c
         write(outdev,9200) 4
         call die_gracefully
       end if
+      if( cur_twin > max_twin_sys ) then
+        print*,'here', cur_twin,max_twin_sys
+        write(outdev,9200) 6
+        call die_gracefully
+      end if
 c
 c              use max value if either one is close
 c
       if( (cur_hard == max_uhard) .or.
-     &    (cur_slip == max_slip_sys) ) then
+     &    (cur_slip == max_slip_sys) .or.
+     &    (cur_twin == max_twin_sys)) then
         use_max = .true.
       else
         use_max = .false.
       end if
       num_hard = cur_hard
       nslip    = cur_slip
+      ntwin    = cur_twin
 c
       if( .not. allocated( indexes_common ) )
      &   allocate( indexes_common(num_common_indexes,2) )
@@ -267,9 +277,9 @@ c
         length_crys_hist(9) = max_uhard
         length_crys_hist(10) = 6
         length_crys_hist(11) = 6
-        length_crys_hist(17) = max_slip_sys
-        length_crys_hist(18) = max_uhard
-        length_crys_hist(19) = max_uhard
+        length_crys_hist(17) = max_twin_sys
+        length_crys_hist(18) = max_twin_sys
+        length_crys_hist(19) = max_twin_sys
         length_crys_hist(20) = 6
         length_crys_hist(21) = 6
       else
@@ -279,9 +289,9 @@ c
         length_crys_hist(9) = num_hard
         length_crys_hist(10) = 6
         length_crys_hist(11) = 6
-        length_crys_hist(17) = nslip
-        length_crys_hist(18) = num_hard
-        length_crys_hist(19) = num_hard
+        length_crys_hist(17) = ntwin
+        length_crys_hist(18) = ntwin
+        length_crys_hist(19) = ntwin
         length_crys_hist(20) = 6
         length_crys_hist(21) = 6
       end if

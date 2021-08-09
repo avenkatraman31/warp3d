@@ -48,8 +48,9 @@ c              new variables to control local solvers inside mm10
             integer :: tang_calc, miter, gpp, method, st_it(3)
             double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
-            ! logical to determine twinning
-             logical :: twinning
+c           Twinning stuff
+            integer :: ntwin
+            logical :: twinning
       end type
 c
       type :: nonlinear_sigeps_work

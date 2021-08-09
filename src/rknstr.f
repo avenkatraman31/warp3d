@@ -1973,9 +1973,10 @@ c          alternative model flag
 c
         local_work%c_props(i,c)%alter_mode = c_array(cnum)%alter_mode
 c
-c          Twinning flag
+c          Twinning stuff
 c
         local_work%c_props(i,c)%twinning = c_array(cnum)%twinning
+        local_work%c_props(i,c)%ntwin = c_array(cnum)%ntwin
 c
       case( 4 )
 c

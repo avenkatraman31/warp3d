@@ -258,7 +258,7 @@ c
       if (local_work%step .eq. 1) cc_n%twinned = .false.
 c
 c     Checking if twin volume fraction has hit critical value - 2%
-c     Instantiating cc_props_twin if it has
+c     Instantiating cc_props_twin and history_n for twin if it has
 c
       if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
      &   (.not. cc_n%twinned)) then
@@ -270,8 +270,11 @@ c
      &              max_twin_id,
      &              local_work%debug_flag(iloop),
      &              cc_props_twin )
-
-        print*, cc_props_twin%stiffness
+        call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
+     &                                cc_n, history_n(iloop,1),
+     &                                span,crys_no, hist_sz )
+        print*, history_n(iloop,index_crys_hist(crys_no,12,1):
+     &                          index_crys_hist(crys_no,21,2))
         cc_n%twinned=.true.
       endif
 c
@@ -651,107 +654,130 @@ c     *    Initialize a twin using crystal_state :: n                *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_init_cc_hist_twin0( props, angles, history,
-     &                               user_initial_stresses, span,
-     &                               crys_no, hist_size )
+      subroutine mm10_init_cc_hist_twin0( props, props_twin, cc_n,
+     &                                 history,
+     &                                span, 
+     &                                crys_no, hist_size )
       use mm10_defs
       use mm10_constants
       implicit none
 c
-      type(crystal_props) :: props
-      integer :: span, crys_no, hist_size
-      double precision :: history(span,*), angles(*),
-     &                    user_initial_stresses(*)
+      type(crystal_props) :: props,props_twin
+      type(crystal_state) :: cc_n
+      integer,intent(in) :: span, crys_no, hist_size
+      double precision :: history(span,*)
 c
       integer :: sh, eh, sh2, eh2, len1, len2
       double precision :: work_hist1(hist_size),
      &                    work_hist2(hist_size) ! automatics
+      double precision :: angles(3)
+c
+      double precision, dimension(3,3) :: full_rot, work1
+      double precision :: psiK, phiK, thetaK, psi, phi, theta
+      double precision, external :: mm10_atan2
+      double precision, parameter :: tol=1.0d-16
+c
+c           Computing Re at time-step n using state struct n
+c
+      call mm10_a_mult_type_3t( work1, cc_n%Rp, cc_n%R )
+      call mm10_a_mult_type_1( full_rot, props_twin%g, work1 )
+c
+      psiK = mm10_atan2( full_rot(3,2), full_rot(3,1) )
+      phiK = mm10_atan2( full_rot(2,3), full_rot(1,3) )
+      if( full_rot(3,3) .gt. one ) full_rot(3,3) = one
+      thetaK = dacos( full_rot(3,3) )
+
+      if( props%angle_convention .ne. 1 ) then
+         write (props%out,*) "Angle convention not implemented."
+         call die_gracefully
+      end if
+c      
+      psi = psiK
+      phi = phiK
+      theta = thetaK
+c
+      if( props%angle_type .eq. 1) then
+        angles(1) = one_eighty/pi*psi
+        angles(2) = one_eighty/pi*theta
+        angles(3) = one_eighty/pi*phi
+      elseif( props%angle_type .eq. 2 ) then
+        angles(1) = psi
+        angles(2) = theta
+        angles(3) = phi
+      else
+        write (props%out,*) "Unrecognized angle convention."
+        call die_gracefully
+      end if
 c
 c              Stress
 c
-      sh = index_crys_hist(crys_no,1,1)
-      eh = index_crys_hist(crys_no,1,2)
-      history(1,sh:eh) = zero
-      history(1,sh+0) = user_initial_stresses(1)
-      history(1,sh+1) = user_initial_stresses(2)
-      history(1,sh+2) = user_initial_stresses(3)
-      history(1,sh+3) = user_initial_stresses(4)
-      history(1,sh+4) = user_initial_stresses(5)
-      history(1,sh+5) = user_initial_stresses(6)
+      sh = index_crys_hist(crys_no,12,1)
+      eh = index_crys_hist(crys_no,12,2)
+      history(1,sh:eh) = cc_n%stress
 c
-c              Angles
+c              Store Angles at right location
 c
-      sh = index_crys_hist(crys_no,2,1)
+      sh = index_crys_hist(crys_no,13,1)
       history(1,sh+0) = angles(1)
       history(1,sh+1) = angles(2)
       history(1,sh+2) = angles(3)
 c
 c              Rotation
 c
-      sh = index_crys_hist(crys_no,3,1)
-      history(1,sh+0) = one
-      history(1,sh+1) = zero
-      history(1,sh+2) = zero
-      history(1,sh+3) = zero
-      history(1,sh+4) = one
-      history(1,sh+5) = zero
-      history(1,sh+6) = zero
-      history(1,sh+7) = zero
-      history(1,sh+8) = one
+      sh = index_crys_hist(crys_no,14,1)
+      eh = index_crys_hist(crys_no,14,2)
+      history(1,sh+0) = cc_n%Rp(1,1)
+      history(1,sh+1) = cc_n%Rp(2,1)
+      history(1,sh+2) = cc_n%Rp(3,1)
+      history(1,sh+3) = cc_n%Rp(1,2)
+      history(1,sh+4) = cc_n%Rp(2,2)
+      history(1,sh+5) = cc_n%Rp(3,2)
+      history(1,sh+6) = cc_n%Rp(1,3)
+      history(1,sh+7) = cc_n%Rp(2,3)
+      history(1,sh+8) = cc_n%Rp(3,3)
 c
 c              D
 c
-      sh = index_crys_hist(crys_no,4,1)
-      eh = index_crys_hist(crys_no,4,2)
-      history(1,sh:eh) = zero
+      sh = index_crys_hist(crys_no,15,1)
+      eh = index_crys_hist(crys_no,15,2)
+      history(1,sh:eh) = cc_n%D
 c
 c              eps
 c
-      sh = index_crys_hist(crys_no,5,1)
-      eh = index_crys_hist(crys_no,5,2)
-      history(1,sh:eh) = zero
+      sh = index_crys_hist(crys_no,16,1)
+      eh = index_crys_hist(crys_no,16,2)
+      history(1,sh:eh) = cc_n%eps
 c
 c              slip_incs
 c
-      sh = index_crys_hist(crys_no,6,1)
-      eh = index_crys_hist(crys_no,6,2)
-      history(1,sh:eh) = zero
+      sh = index_crys_hist(crys_no,17,1)
+      eh = index_crys_hist(crys_no,17,2)
+      history(1,sh:eh) = 0
 c
 c              Hardening
 c
-      sh   = index_crys_hist(crys_no,7,1)
-      eh   = index_crys_hist(crys_no,7,2)
-      sh2  = index_crys_hist(crys_no,8,1)
-      eh2  = index_crys_hist(crys_no,8,2)
+      sh   = index_crys_hist(crys_no,18,1)
+      eh   = index_crys_hist(crys_no,18,2)
+      sh2  = index_crys_hist(crys_no,19,1)
+      eh2  = index_crys_hist(crys_no,19,2)
       len1 = eh - sh + 1
       len2 = eh2 - sh2 + 1
 c
-c ***** START: Add new Constitutive Models into this block *****
-      select case( props%h_type ) ! hardening model
-        case( 1 ) ! simple Voche
-          call mm10_init_voche( props, work_hist1, work_hist2 )
-        case( 2 ) ! MTS
-          call mm10_init_mts( props, work_hist1, work_hist2 )
-        case( 3 ) ! User
-         call mm10_init_user( props, work_hist1, work_hist2 )
-        case( 4 ) ! ORNL
-         call mm10_init_ornl( props, work_hist1, work_hist2 )
-        case( 7 ) ! mrr
-         call mm10_init_mrr( props, work_hist1, work_hist2 )
-        case( 8 ) ! Armstrong-Frederick
-         call mm10_init_arfr( props, work_hist1, work_hist2 )
-        case( 9 ) ! DJGM
-         call mm10_init_djgm( props, work_hist1, work_hist2 )
-        case( 10 ) ! avoche
-         call mm10_init_avoche( props, work_hist1, work_hist2 )
-        case default
-         call mm10_unknown_hard_error( props )
-      end select
-c ****** END: Add new Constitutive Models into this block ******
+      history(1,sh:eh)   = cc_n%tau_tilde(1:len1)
+      history(1,sh2:eh2) = cc_n%tt_rate(1:len2)
 c
-      history(1,sh:eh)   = work_hist1(1:len1)
-      history(1,sh2:eh2) = work_hist2(1:len2)
+c              ep and ed
 c
+      sh   = index_crys_hist(crys_no,20,1)
+      eh   = index_crys_hist(crys_no,20,2)
+      sh2  = index_crys_hist(crys_no,21,1)
+      eh2  = index_crys_hist(crys_no,21,2)
+      len1 = eh - sh + 1
+      len2 = eh2 - sh2 + 1
+c
+      history(1,sh:eh)   = cc_n%ep(1:len1)
+      history(1,sh2:eh2) = cc_n%ed(1:len2)
+c	  
       return
       end
 c
@@ -2082,6 +2108,7 @@ c
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
       cc_props%twinning    = inc_props%twinning
+      cc_props%ntwin       = inc_props%ntwin
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -4667,7 +4694,8 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
-      cc_props%twinning     = inc_props%twinning
+      cc_props%twinning    = inc_props%twinning
+      cc_props%ntwin       = inc_props%ntwin
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002

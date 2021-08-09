@@ -12,7 +12,8 @@ c
      &    mxecor, mxedof, mxndldcm, mxtnsz,
      &    mxutsz, mxnusz, mxoupt, max_surfaces, max_tied_sets,
      &    max_packet_types, max_user_lists,
-     &    nonlocal_shared_state_size, max_interface_props
+     &    nonlocal_shared_state_size, max_interface_props,
+     &    max_twin_sys,max_twin_variant
 
       parameter( mxndel=20,max_threads=128,
      &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxlc=5000,
@@ -24,7 +25,7 @@ c
      &    max_slip_sys=90, max_uhard=90, max_surfaces=100,
      &    max_tied_sets=100, max_packet_types=200, max_user_lists=500,
      &    mxcvtests=10, nonlocal_shared_state_size=12,
-     &    max_interface_props=80 )
+     &    max_interface_props=80, max_twin_sys=18,max_twin_variant=1)
 c
       parameter( mxecor=3*mxndel,mxedof=mxndof*mxndel,
      &  mxndldcm=mxndof+1,
