@@ -81,7 +81,7 @@ c
         double precision, dimension(6) :: ed, ep
         integer :: step, elem, gp, iter
         ! Twinning flags
-        logical :: twinned
+        integer :: twinned
       end type
 c
 c              store integer indexes into history vector for a an

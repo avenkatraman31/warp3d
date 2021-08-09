@@ -44,7 +44,8 @@ c        Twinned grain state variable locations
 c
       integer :: loc_cauchy_twin, loc_euler_twin, loc_pls_R_twin, 
      &  loc_uddt_twin,loc_els_eps_twin, loc_cur_slip_incr_twin, 
-     &  loc_tau_tilde_twin, loc_tt_rate_twin, loc_ep_twin, loc_ed_twin
+     &  loc_tau_tilde_twin, loc_tt_rate_twin, loc_ep_twin, loc_ed_twin,
+     &  loc_flag_twin
 c
 c              the top part of the history vectory contains data
 c              not dependent on the number of crystals defined
@@ -78,7 +79,7 @@ c
       call iodevn( indev, outdev, idummy, jdummy )
 c
       num_common_indexes = 5
-      num_crystal_terms  = 21
+      num_crystal_terms  = 22
 c
 c                run through materials employed in model.
 c                find the CP materials, determine number of variables
@@ -259,6 +260,7 @@ c                     hardening variables. used for prediction/init of
 c                     local NR
 c                20 -- ep**. ( 6 x 1 ). accumulated plastic strain
 c                21 -- ed**. ( 6 x 1 ). diffusional rate ??
+c                22 -- twinned. ( 1 x 1 ). flag to indicate twinning
 c
       length_crys_hist(1) = 6
       length_crys_hist(2) = 3
@@ -270,6 +272,7 @@ c
       length_crys_hist(14) = 9
       length_crys_hist(15) = 6
       length_crys_hist(16) = 6
+      length_crys_hist(22) = 1
       if( use_max ) then
         length_crys_hist(6) = max_slip_sys
         length_crys_hist(7) = max_uhard
@@ -344,6 +347,7 @@ c
      &                           length_crys_hist(18)
         loc_ep_twin       = loc_tt_rate_twin   + length_crys_hist(19)
         loc_ed_twin       = loc_ep_twin        + length_crys_hist(20)
+        loc_flag_twin     = loc_ed_twin        + length_crys_hist(21)
 c
         index_crys_hist(crystal,1,1) = loc_cauchy
         index_crys_hist(crystal,1,2) = loc_cauchy +
@@ -425,6 +429,10 @@ c
         index_crys_hist(crystal,21,1) = loc_ed_twin
         index_crys_hist(crystal,21,2) = loc_ed_twin   +
      &                                 length_crys_hist(21)-1
+c
+        index_crys_hist(crystal,22,1) = loc_flag_twin
+        index_crys_hist(crystal,22,2) = loc_flag_twin   +
+     &                                 length_crys_hist(22)-1
 c
 c                consistency check
 c

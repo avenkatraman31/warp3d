@@ -72,6 +72,12 @@ c                 locals for twinning
 c
       type(crystal_props) :: cc_props_twin
       type(crystal_state) :: cc_n_twin, cc_np1_twin
+      double precision :: sig_avg_twin(6), p_strain_ten_c_twin(6),
+     &                    p_strain_ten_twin(6),
+     &                    tang_avg_twin(6,6), tang_avg_vec_twin(36), ! see equiv
+     &                    slip_avg_twin(length_crys_hist(17))
+      double precision :: t_work_inc_twin, p_work_inc_twin,n_avg_twin,
+     &                    p_strain_inc_twin,p_strain_avg_twin
 c
 c
       debug = .false.
@@ -253,31 +259,6 @@ c
      &         work_gradfe,  work_R, ! both readonly,
      &         cc_props, cc_n )
 c
-c     At initial step, set twinned = .false.
-c
-      if (local_work%step .eq. 1) cc_n%twinned = .false.
-c
-c     Checking if twin volume fraction has hit critical value - 2%
-c     Instantiating cc_props_twin and history_n for twin if it has
-c
-      if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
-     &   (.not. cc_n%twinned)) then
-        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
-     &                        max_f_twin,max_twin_id)
-        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
-     &              local_work%angle_type(iloop),
-     &              local_work%angle_convention(iloop),
-     &              max_twin_id,
-     &              local_work%debug_flag(iloop),
-     &              cc_props_twin )
-        call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
-     &                                cc_n, history_n(iloop,1),
-     &                                span,crys_no, hist_sz )
-        print*, history_n(iloop,index_crys_hist(crys_no,12,1):
-     &                          index_crys_hist(crys_no,21,2))
-        cc_n%twinned=.true.
-      endif
-c
       work_vec1(1:9) = local_work%rot_blk_n1(iloop,1:9,gp)
       work_vec2(1:6) = uddt(iloop,1:6)
       call mm10_setup_np1(
@@ -294,6 +275,58 @@ c
           call mm10_set_cons( local_work, cc_props, 2, i, c )
           return
       end if
+c
+c     Checking if twin volume fraction has hit critical value - 2%
+c     Instantiating cc_props_twin and history_n for twin if it has
+c
+      if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
+     &   cc_n%twinned .eq. 1) then
+        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
+     &                        max_f_twin,max_twin_id)
+        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
+     &              local_work%angle_type(iloop),
+     &              local_work%angle_convention(iloop),
+     &              max_twin_id,
+     &              local_work%debug_flag(iloop),
+     &              cc_props_twin )
+        call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
+     &                                cc_n, history_n(iloop,1),
+     &                                span,crys_no, hist_sz )
+        print*, 'twin incepted'
+        call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
+     &                             work_gradfe,  work_R, ! both readonly,
+     &                             cc_props_twin, cc_n_twin )
+        call mm10_setup_np1_twin(
+     &        work_vec1, work_vec2, ! read only in subroutine
+     &        local_work%dt, gp_temps(iloop), local_work%step,
+     &        iloop-1+local_work%felem, local_work%iter,
+     &        local_work%gpn, cc_np1_twin )
+        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+      ! &        cc_n_twin,
+      ! &        local_work%material_cut_step, iout, .false., 0,
+      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+c
+c
+      elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
+     &   cc_n%twinned .eq. 2) then
+        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
+     &                        max_f_twin,max_twin_id)
+        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
+     &              local_work%angle_type(iloop),
+     &              local_work%angle_convention(iloop),
+     &              max_twin_id,
+     &              local_work%debug_flag(iloop),
+     &              cc_props_twin )
+        call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
+     &                             work_gradfe,  work_R, ! both readonly,
+     &                             cc_props_twin, cc_n_twin )
+        print*, 'twin continues'
+        call mm10_setup_np1_twin(
+     &        work_vec1, work_vec2, ! read only in subroutine
+     &        local_work%dt, gp_temps(iloop), local_work%step,
+     &        iloop-1+local_work%felem, local_work%iter,
+     &        local_work%gpn, cc_np1_twin )
+      endif
 c
 c                  accumulate sums for subsequent averaging
 c                    cp_strain_inc -> effective plastic increment
@@ -314,6 +347,10 @@ c                  store the CP history for this crystal
 c
       call mm10_store_cryhist( crys_no, span, cc_props, cc_np1,
      &                         cc_n, history_np1(iloop,1) )
+c
+      call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
+     &                             cc_np1_twin,cc_n_twin, 
+     &                             history_np1(iloop,1) )
 c
       return
 c
@@ -640,6 +677,11 @@ c
       history(1,sh:eh)   = work_hist1(1:len1)
       history(1,sh2:eh2) = work_hist2(1:len2)
 c
+c      Set twinned to zero
+c
+      sh=index_crys_hist(crys_no,22,1)
+      history(1,sh)=zero
+c
       return
       end
 c     ****************************************************************
@@ -777,7 +819,10 @@ c
 c
       history(1,sh:eh)   = cc_n%ep(1:len1)
       history(1,sh2:eh2) = cc_n%ed(1:len2)
-c	  
+c     
+      sh=index_crys_hist(crys_no,22,1)
+      history(1,sh)=one
+c
       return
       end
 c
@@ -1281,12 +1326,94 @@ c
       sh = index_crys_hist(crys_no,11,1)
       history(1,sh:sh-1+6) = np1%ed(1:6)
 c
+c     Store twin flag into history vector
+c
+      sh = index_crys_hist(crys_no,22,1)
+      history(1,sh) = np1%twinned
       return
 c
  9000 format('>> FATAL ERROR: mm10_store_cryhist @ ',i2 )
 
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_store_cryhist_twin           *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 07/25/2021 rhd              *
+c     *                                                              *
+c     *          Copy the state np1 twin struct to the history       *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_store_cryhist_twin( crys_no, span, props, np1,
+     &                               n, history )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      integer :: span, crys_no
+      double precision :: history(span,*)
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+c
+      integer :: sh, eh, len1, len2
+c!DIR$ ASSUME_ALIGNED history:64
 
+c
+      sh = index_crys_hist(crys_no,12,1)
+      eh = index_crys_hist(crys_no,12,2)
+      history(1,sh:eh) = np1%stress(1:6)
+c
+c
+      sh = index_crys_hist(crys_no,13,1)
+      history(1,sh+0) = np1%euler_angles(1)
+      history(1,sh+1) = np1%euler_angles(2)
+      history(1,sh+2) = np1%euler_angles(3)
+c
+      sh = index_crys_hist(crys_no,14,1)
+      history(1,sh+0) = np1%Rp(1,1)
+      history(1,sh+1) = np1%Rp(2,1)
+      history(1,sh+2) = np1%Rp(3,1)
+      history(1,sh+3) = np1%Rp(1,2)
+      history(1,sh+4) = np1%Rp(2,2)
+      history(1,sh+5) = np1%Rp(3,2)
+      history(1,sh+6) = np1%Rp(1,3)
+      history(1,sh+7) = np1%Rp(2,3)
+      history(1,sh+8) = np1%Rp(3,3)
+c
+      sh = index_crys_hist(crys_no,15,1)
+      eh = index_crys_hist(crys_no,15,2)
+      history(1,sh:eh) = np1%D(1:6)
+c
+      sh = index_crys_hist(crys_no,16,1)
+      eh = index_crys_hist(crys_no,16,2)
+      history(1,sh:eh) = np1%eps(1:6)
+c
+      sh = index_crys_hist(crys_no,17,1)
+      eh = index_crys_hist(crys_no,17,2)
+      history(1,sh:eh) = np1%slip_incs(1:props%nslip)
+c
+      sh   = index_crys_hist(crys_no,18,1)
+      len1 = props%num_hard
+      history(1,sh:sh-1+len1) = np1%tau_tilde(1:len1)
+c
+      sh = index_crys_hist(crys_no,19,1)
+      history(1,sh:sh-1+len1) = np1%tt_rate(1:len1)
+c
+      sh = index_crys_hist(crys_no,20,1)
+      history(1,sh:sh-1+6) = np1%ep(1:6)
+c
+      sh = index_crys_hist(crys_no,21,1)
+      history(1,sh:sh-1+6) = np1%ed(1:6)
+c
+      return
+c
+ 9000 format('>> FATAL ERROR: mm10_store_cryhist_twin @ ',i2 )
+
+      end
 
 c
 c --------------------------------------------------------------------
@@ -1967,6 +2094,97 @@ c
       call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
       call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
       call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
+c
+c      twin flag
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_setup_np1_twin               *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *                   last modified: 07/27/21 rhd                *
+c     *                                                              *
+c     *    Initialize the state np1 structure with new strain/temp/  *
+c     *    time increment for the twinned portion of the crystal     *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_setup_np1_twin( Rur, dstrain, dt, T, step, elem,
+     &                           iter, gp, np1 )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      integer :: step, elem, gp, iter
+      type(crystal_state) :: np1
+      double precision :: Rur(3,3), dstrain(6)
+      double precision :: dt, T
+c
+      integer :: i, j
+c
+c!DIR$ ASSUME_ALIGNED Rur:64, dstrain:64
+c
+c              scalars
+c
+      np1%temp         = T
+      np1%tinc         = dt
+      np1%step         = step
+      np1%elem         = elem
+      np1%iter         = iter
+      np1%gp           = gp
+      np1%dg           = zero
+      np1%tau_v        = zero
+      np1%tau_y        = zero
+      np1%mu_harden    = zero
+      np1%work_inc     = zero
+      np1%p_work_inc   = zero
+      np1%p_strain_inc = zero
+c
+c              vectors
+c
+      do i = 1, 6
+        np1%D(i)      = dstrain(i)
+        np1%stress(i) = zero
+        np1%eps(i)    = zero
+      end do
+c
+      np1%euler_angles(1) = zero
+      np1%euler_angles(2) = zero
+      np1%euler_angles(3) = zero
+c
+      do i = 1, max_slip_sys
+        np1%tau_l(i)     = zero
+        np1%slip_incs(i) = zero
+      end do
+c
+      do i = 1, max_uhard
+        np1%tau_tilde(i) = zero
+        np1%tt_rate(i)   = zero
+        np1%u(i)         = zero
+      end do
+c
+c              matrices
+c
+      do j = 1, 3
+        np1%R(1,j)  = Rur(1,j)
+        np1%R(2,j)  = Rur(2,j)
+        np1%R(3,j)  = Rur(3,j)
+        np1%Rp(1,j) = zero
+        np1%Rp(2,j) = zero
+        np1%Rp(3,j) = zero
+      end do
+c
+      call mm10_a_zero_vec( np1%gradFeinv, 27 )
+      call mm10_a_zero_vec( np1%tangent, 36 )
+      call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
+      call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
+      call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
+c
+c      twin flag
 c
       return
 c
@@ -2874,6 +3092,10 @@ c
       eh = index_crys_hist(crys_no,11,2)
       n%ed(1:6) = history(1,sh:eh)
 c
+c
+      sh = index_crys_hist(crys_no,22,1)
+      n%twinned = history(1,sh)
+c
       return
 c
  9000 format('>> FATAL ERROR: mm10_copy_cc_hist @ ',i2 )
@@ -2954,12 +3176,7 @@ c
 c
       sh = index_crys_hist(crys_no,17,1)
       eh = index_crys_hist(crys_no,17,2)
-      len2 = eh - sh + 1
-      if( len2 .ne. length_crys_hist(6) ) then ! sanity check
-         write(props%out,9000) 1
-         call die_abort
-      end if
-      n%slip_incs(1:len2-1) = history(1,sh:eh)
+      n%slip_incs(1:props%nslip) = history(1,sh:eh)
 c
       sh = index_crys_hist(crys_no,18,1)
       eh = index_crys_hist(crys_no,18,2)
@@ -2976,6 +3193,11 @@ c
       sh = index_crys_hist(crys_no,21,1)
       eh = index_crys_hist(crys_no,21,2)
       n%ed(1:6) = history(1,sh:eh)
+c
+c     Twin flags
+c
+      sh = index_crys_hist(crys_no,22,1)
+      n%twinned = history(1,sh)
 c
       return
 c
@@ -4150,6 +4372,11 @@ c    Check if twinning has reached critical volume fraction
 c
       if(props%s_type .eq. 11 .and. props%twinning) then
         np1%u(10) = n%u(10)+sum(np1%slip_incs(19:30))
+        if(np1%u(10) .gt. two*ptone**(two+one) ) then
+            if(n%twinned .eq. 0) np1%twinned = 1
+            if(n%twinned .eq. 1) np1%twinned = 2
+            if(n%twinned .eq. 2) np1%twinned = 2
+        endif
       endif
 c
       return
@@ -4800,10 +5027,10 @@ c
 c
       cc_props%angle_type       = atype
       cc_props%angle_convention = aconv
-      cc_props%nslip            = inc_props%nslip-n_variant!accounting for only slip 
+      cc_props%nslip            = inc_props%nslip-inc_props%ntwin!accounting for only slip 
 c
       cc_props%h_type           = inc_props%h_type
-      cc_props%num_hard         = inc_props%num_hard-n_variant
+      cc_props%num_hard         = inc_props%num_hard-inc_props%ntwin
       cc_props%tang_calc        = inc_props%tang_calc
       cc_props%debug            = debug
       cc_props%s_type           = 10!HCP18
