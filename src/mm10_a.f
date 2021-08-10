@@ -301,10 +301,12 @@ c
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin )
-        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-     &        cc_n_twin,
-     &        local_work%material_cut_step, iout, .false., 0,
-     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        print*, 'max_twin_id'
+        print*, max_twin_id
+        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+      ! &        cc_n_twin,
+      ! &        local_work%material_cut_step, iout, .false., 0,
+      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
 c
 c
       elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
