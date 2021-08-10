@@ -58,8 +58,8 @@ c
         logical :: solver, strategy, debug, gpall, alter_mode
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
-        ! Twinning stuff
-        integer :: ntwin
+        ! Twinning stuff; n_twin_slip = no. of slip systems in twinned grain
+        integer :: n_twin_slip
         logical :: twinning
       end type
 c
@@ -223,7 +223,7 @@ c                 Solver flags
 c
                   logical :: valid
 c                 Twinning stuff
-                  integer :: ntwin
+                  integer :: n_twin_slip
                   logical :: twinning
 c
             end type crystal
@@ -423,7 +423,7 @@ c            Alternative model features, currently Voce only
                   c_array(num)%alter_mode = .false.
 c            Twinning initialization
                   c_array(num)%twinning = .false.
-                  c_array(num)%ntwin = 18
+                  c_array(num)%n_twin_slip = 18
 
             end subroutine
 c
@@ -1490,7 +1490,7 @@ c                         c_array(num)%ni(30,3)=a/ac1
 c HCP: basal, prismatic, 1st-order pyramidal
                   elseif (c_array(num)%slip_type .eq. 10) then
                         c_array(num)%nslip = 6+12
-                        c_array(num)%ntwin = 18
+                        c_array(num)%n_twin_slip = 18
                         ! material constant of hcp
                         a = 0.295d0
                         c = 0.468d0
@@ -1760,7 +1760,7 @@ c HCP: basal, prismatic, 1st-order pyramidal, tensile twinning
                   elseif (c_array(num)%slip_type .eq. 11) then
                         c_array(num)%nslip = 30
                         c_array(num)%num_hard = c_array(num)%nslip
-                        c_array(num)%ntwin = 18
+                        c_array(num)%n_twin_slip = 18
                         ! material constant of hcp
                         a = 0.295d0
                         c = 0.468d0

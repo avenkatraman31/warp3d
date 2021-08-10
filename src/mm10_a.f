@@ -301,10 +301,10 @@ c
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin )
-        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-      ! &        cc_n_twin,
-      ! &        local_work%material_cut_step, iout, .false., 0,
-      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+     &        cc_n_twin,
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
 c
 c
       elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
@@ -2326,7 +2326,7 @@ c
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
       cc_props%twinning    = inc_props%twinning
-      cc_props%ntwin       = inc_props%ntwin
+      cc_props%n_twin_slip = inc_props%n_twin_slip
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -4922,7 +4922,7 @@ c
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
       cc_props%twinning    = inc_props%twinning
-      cc_props%ntwin       = inc_props%ntwin
+      cc_props%n_twin_slip = inc_props%n_twin_slip
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -5027,10 +5027,10 @@ c
 c
       cc_props%angle_type       = atype
       cc_props%angle_convention = aconv
-      cc_props%nslip            = inc_props%nslip-inc_props%ntwin!accounting for only slip 
+      cc_props%nslip            = inc_props%n_twin_slip!accounting for only slip 
 c
       cc_props%h_type           = inc_props%h_type
-      cc_props%num_hard         = inc_props%num_hard-inc_props%ntwin
+      cc_props%num_hard         = inc_props%n_twin_slip
       cc_props%tang_calc        = inc_props%tang_calc
       cc_props%debug            = debug
       cc_props%s_type           = 10!HCP18

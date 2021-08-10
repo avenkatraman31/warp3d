@@ -1976,7 +1976,7 @@ c
 c          Twinning stuff
 c
         local_work%c_props(i,c)%twinning = c_array(cnum)%twinning
-        local_work%c_props(i,c)%ntwin = c_array(cnum)%ntwin
+        local_work%c_props(i,c)%n_twin_slip=c_array(cnum)%n_twin_slip
 c
       case( 4 )
 c

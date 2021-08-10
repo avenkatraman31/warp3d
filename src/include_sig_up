@@ -49,7 +49,7 @@ c              new variables to control local solvers inside mm10
             double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
 c           Twinning stuff
-            integer :: ntwin
+            integer :: n_twin_slip
             logical :: twinning
       end type
 c
