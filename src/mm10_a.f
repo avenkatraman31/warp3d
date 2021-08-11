@@ -280,19 +280,15 @@ c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
 c
       if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
-     &   cc_n%twinned .eq. 1) then
+     &   cc_n%twinned .eq. 1 ) then
         call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
      &                        max_f_twin,max_twin_id)
-        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
-     &              local_work%angle_type(iloop),
-     &              local_work%angle_convention(iloop),
+        call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
-     &              local_work%debug_flag(iloop),
      &              cc_props_twin )
         call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
      &                                cc_n, history_n(iloop,1),
      &                                span,crys_no, hist_sz )
-        print*, 'twin incepted'
         call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
      &                             work_gradfe,  work_R, ! both readonly,
      &                             cc_props_twin, cc_n_twin )
@@ -301,23 +297,23 @@ c
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin )
-        print*, 'max_twin_id'
-        print*, max_twin_id
-        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-      ! &        cc_n_twin,
-      ! &        local_work%material_cut_step, iout, .false., 0,
-      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+     &        cc_n_twin,
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        if( local_work%material_cut_step ) then
+          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          return
+        end if
+        print*, 'twin incepted'
 c
 c
       elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
-     &   cc_n%twinned .eq. 2) then
+     &   cc_n%twinned .eq. 2 ) then
         call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
      &                        max_f_twin,max_twin_id)
-        call mm10_init_cc_props_twin( local_work%c_props(iloop,c),
-     &              local_work%angle_type(iloop),
-     &              local_work%angle_convention(iloop),
+        call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
-     &              local_work%debug_flag(iloop),
      &              cc_props_twin )
         call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
      &                             work_gradfe,  work_R, ! both readonly,
@@ -4835,18 +4831,15 @@ c     *    structure for the twin upon twin nucleation               *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_init_cc_props_twin( inc_props, atype, aconv,
-     &                                variant, debug, cc_props )
+      subroutine mm10_init_cc_props_twin( inc_props, variant,cc_props )
       use mm10_defs
       use mm10_constants
       use twin_variants
       implicit none
       include 'include_sig_up'
-      integer :: atype, aconv, variant,n_variant
-      integer :: index_i
-      logical :: debug
-      type(crystal_properties) :: inc_props
-      type(crystal_props) :: cc_props
+      integer, intent(in) :: variant
+      integer :: index_i,n_variant
+      type(crystal_props) :: inc_props,cc_props
       double precision, dimension(3,3) :: reflection_twin,
      &                                    reflection_twin_s,
      &                                    reflection_twin_t,
@@ -4854,6 +4847,9 @@ c
       double precision, dimension(6,6) :: reflection_twin_6,
      &                                    reflection_twin_6_t,
      &                                     temp_66
+c
+      n_variant=12
+c
 c
 c        get the twin reflection matrix
 c
@@ -4873,29 +4869,27 @@ c
 c
       call mm10_a_transpose(reflection_twin_6,6,6,reflection_twin_6_t)
 c
-      n_variant=12
-c
 c              scalars
 c
-      cc_props%rate_n      = inc_props%rateN
-      cc_props%tau_hat_y   = inc_props%tauHat_y
-      cc_props%G_0_y       = inc_props%Go_y
+      cc_props%rate_n      = inc_props%rate_n
+      cc_props%tau_hat_y   = inc_props%tau_hat_y
+      cc_props%G_0_y       = inc_props%G_0_y
       cc_props%burgers     = inc_props%burgers
       cc_props%p_v         = inc_props%p_v
       cc_props%q_v         = inc_props%q_v
       cc_props%boltzman    = inc_props%boltzman
-      cc_props%theta_0     = inc_props%theta_o
-      cc_props%eps_dot_0_v = inc_props%eps_dot_o_v
-      cc_props%eps_dot_0_y = inc_props%eps_dot_o_y
+      cc_props%theta_0     = inc_props%theta_0
+      cc_props%eps_dot_0_v = inc_props%eps_dot_0_v
+      cc_props%eps_dot_0_y = inc_props%eps_dot_0_y
       cc_props%p_y         = inc_props%p_y
       cc_props%q_y         = inc_props%q_y
       cc_props%tau_a       = inc_props%tau_a
-      cc_props%tau_hat_v   = inc_props%tauHat_v
-      cc_props%G_0_v       = inc_props%Go_v
-      cc_props%k_0         = inc_props%k_o
-      cc_props%mu_0        = inc_props%mu_o
-      cc_props%D_0         = inc_props%D_o
-      cc_props%T_0         = inc_props%t_o
+      cc_props%tau_hat_v   = inc_props%tau_hat_v
+      cc_props%G_0_v       = inc_props%G_0_v
+      cc_props%k_0         = inc_props%k_0
+      cc_props%mu_0        = inc_props%mu_0
+      cc_props%D_0         = inc_props%D_0
+      cc_props%T_0         = inc_props%t_0
       cc_props%tau_y       = inc_props%tau_y
       cc_props%tau_v       = inc_props%tau_v
       cc_props%voche_m     = inc_props%voche_m
@@ -5027,14 +5021,14 @@ c
       cc_props%cp_099 = inc_props%cp_099
       cc_props%cp_100 = inc_props%cp_100
 c
-      cc_props%angle_type       = atype
-      cc_props%angle_convention = aconv
+      cc_props%angle_type       = inc_props%angle_type
+      cc_props%angle_convention = inc_props%angle_convention
       cc_props%nslip            = inc_props%n_twin_slip!accounting for only slip 
 c
       cc_props%h_type           = inc_props%h_type
       cc_props%num_hard         = inc_props%n_twin_slip
       cc_props%tang_calc        = inc_props%tang_calc
-      cc_props%debug            = debug
+      cc_props%debug            = inc_props%debug
       cc_props%s_type           = 10!HCP18
       cc_props%cnum             = inc_props%cnum
 c
@@ -5046,7 +5040,7 @@ c
 c
 c     Updating orientation
 c
-      call mm10_a_mult_type_1(temp_33,inc_props%rotation_g,
+      call mm10_a_mult_type_1(temp_33,inc_props%g,
      &                        reflection_twin)
       call mm10_a_mult_type_1(cc_props%g,reflection_twin_t,
      &                        temp_33)    
@@ -5064,7 +5058,7 @@ c
 c
 c     Updating stiffness for twin
 c
-      call mm10_a_mult_type_6(inc_props%init_elast_stiff,
+      call mm10_a_mult_type_6(inc_props%stiffness,
      &      reflection_twin_6_t,
      &      temp_66)
       call mm10_a_mult_type_6(reflection_twin_6,

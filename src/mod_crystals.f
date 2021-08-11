@@ -2420,9 +2420,9 @@ c
         do k=1,12
           do i=1,3
             do j=1,3
-              reflection_twins(i,j,k)=2.d0*n_twins(i,k)*n_twins(j,k)
+              reflection_twins(k,i,j)=2.d0*n_twins(k,i)*n_twins(k,j)
             end do
-          reflection_twins(i,i,k)=reflection_twins(i,i,k)-1.d0
+          reflection_twins(k,i,i)=reflection_twins(k,i,i)-1.d0
           end do
         end do
 c       
