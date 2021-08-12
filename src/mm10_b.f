@@ -74,6 +74,7 @@ c
       double precision, dimension(max_uhard) :: vec1,vec2
 c
       integer :: len
+      double precision, parameter :: zero=0.d0
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
@@ -112,6 +113,7 @@ c
       len = props%num_hard
       R2(1:len) = tt(1:len) - h(1:len)
       np1%tt_rate(1:len) = ( h(1:len) - n%tau_tilde(1:len) ) / np1%tinc
+      np1%tt_rate(len+1:max_uhard) = zero
 c      
       return
       end 

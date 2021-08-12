@@ -286,6 +286,13 @@ c
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
      &              cc_props_twin )
+c
+        six_plus_num_hard = 6 + cc_props_twin%num_hard
+        size_num_hard     = cc_props_twin%num_hard
+        size_nslip        = cc_props_twin%nslip
+c
+        call mm10_set_cons( local_work, cc_props_twin, 1, i, c )
+c
         call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
      &                                cc_n, history_n(iloop,1),
      &                                span,crys_no, hist_sz )
@@ -296,7 +303,10 @@ c
      &        work_vec1, work_vec2, ! read only in subroutine
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
-     &        local_work%gpn, cc_np1_twin )
+     &        local_work%gpn, cc_np1_twin,cc_n_twin )
+c
+c
+        print*, 'twin incepted'
         call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
      &        cc_n_twin,
      &        local_work%material_cut_step, iout, .false., 0,
@@ -305,7 +315,9 @@ c
           call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
           return
         end if
-        print*, 'twin incepted'
+        six_plus_num_hard = 6 + cc_props%num_hard
+        size_num_hard     = cc_props%num_hard
+        size_nslip        = cc_props%nslip
 c
 c
       elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
@@ -315,6 +327,13 @@ c
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
      &              cc_props_twin )
+c
+        six_plus_num_hard = 6 + cc_props_twin%num_hard
+        size_num_hard     = cc_props_twin%num_hard
+        size_nslip        = cc_props_twin%nslip
+c
+        call mm10_set_cons( local_work, cc_props_twin, 1, i, c )
+c
         call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
      &                             work_gradfe,  work_R, ! both readonly,
      &                             cc_props_twin, cc_n_twin )
@@ -323,7 +342,21 @@ c
      &        work_vec1, work_vec2, ! read only in subroutine
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
-     &        local_work%gpn, cc_np1_twin )
+     &        local_work%gpn, cc_np1_twin,cc_n_twin )
+        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+     &        cc_n_twin,
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        if( local_work%material_cut_step ) then
+          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          return
+        end if
+c
+        six_plus_num_hard = 6 + cc_props%num_hard
+        size_num_hard     = cc_props%num_hard
+        size_nslip        = cc_props%nslip
+c
+c
       endif
 c
 c                  accumulate sums for subsequent averaging
@@ -540,7 +573,8 @@ c *********************************************************************
       if( h_type .eq. 10 ) then
        select case( isw )
          case( 1 ) ! allocate G=q,H=unused for anisotropic voche
-           allocate( cc_props%Gmat(n_hard,n_hard),
+           if( .not. allocated(cc_props%Gmat)) allocate( 
+     &               cc_props%Gmat(n_hard,n_hard),
      &               stat=allocate_status)
            if( allocate_status .ne. 0 ) then
               write(*,*) ' error allocating G matrix'
@@ -1456,7 +1490,7 @@ c
 c              locals -- max_uhard is in param_def
 c
       integer :: nrJmat, ncJmat
-      double precision :: vec1(max_uhard), vec2(max_uhard)
+      double precision,dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision, allocatable :: Jmat(:,:)
@@ -2112,13 +2146,13 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_setup_np1_twin( Rur, dstrain, dt, T, step, elem,
-     &                           iter, gp, np1 )
+     &                           iter, gp, np1,n )
       use mm10_defs
       use mm10_constants
       implicit none
 c
       integer :: step, elem, gp, iter
-      type(crystal_state) :: np1
+      type(crystal_state) :: np1,n
       double precision :: Rur(3,3), dstrain(6)
       double precision :: dt, T
 c
@@ -2146,13 +2180,13 @@ c              vectors
 c
       do i = 1, 6
         np1%D(i)      = dstrain(i)
-        np1%stress(i) = zero
+        np1%stress(i) = n%stress(i)
         np1%eps(i)    = zero
       end do
 c
-      np1%euler_angles(1) = zero
-      np1%euler_angles(2) = zero
-      np1%euler_angles(3) = zero
+      np1%euler_angles(1) = n%euler_angles(1)
+      np1%euler_angles(2) = n%euler_angles(2)
+      np1%euler_angles(3) = n%euler_angles(3)
 c
       do i = 1, max_slip_sys
         np1%tau_l(i)     = zero
@@ -2160,8 +2194,8 @@ c
       end do
 c
       do i = 1, max_uhard
-        np1%tau_tilde(i) = zero
-        np1%tt_rate(i)   = zero
+        np1%tau_tilde(i) = n%tau_tilde(i)
+        np1%tt_rate(i)   = n%tt_rate(i)
         np1%u(i)         = zero
       end do
 c
@@ -2171,9 +2205,9 @@ c
         np1%R(1,j)  = Rur(1,j)
         np1%R(2,j)  = Rur(2,j)
         np1%R(3,j)  = Rur(3,j)
-        np1%Rp(1,j) = zero
-        np1%Rp(2,j) = zero
-        np1%Rp(3,j) = zero
+        np1%Rp(1,j) = n%Rp(1,j)
+        np1%Rp(2,j) = n%Rp(2,j)
+        np1%Rp(3,j) = n%Rp(3,j)
       end do
 c
       call mm10_a_zero_vec( np1%gradFeinv, 27 )
@@ -3081,6 +3115,7 @@ c
       sh = index_crys_hist(crys_no,9,1)
       eh = index_crys_hist(crys_no,9,2)
       n%tt_rate(1:len1) = history(1,sh:sh-1+len1)
+      n%tt_rate(len1+1:max_uhard)=zero
 c
       sh = index_crys_hist(crys_no,10,1)
       eh = index_crys_hist(crys_no,10,2)
@@ -3565,7 +3600,7 @@ c
       ok = .true.
       if( nrJ .ne. six_plus_num_hard ) ok = .false. ! sanity cehck
       if( .not. ok ) then
-         write(*,*) '... @ 1: ',ncJ, nrJ, six_plus_num_hard
+         write(*,*) 'Error... @ 1: ',ncJ, nrJ, six_plus_num_hard
          call die_abort
       end if
 c
@@ -4841,12 +4876,9 @@ c
       integer :: index_i,n_variant
       type(crystal_props) :: inc_props,cc_props
       double precision, dimension(3,3) :: reflection_twin,
-     &                                    reflection_twin_s,
-     &                                    reflection_twin_t,
-     &                                    temp_33
-      double precision, dimension(6,6) :: reflection_twin_6,
-     &                                    reflection_twin_6_t,
-     &                                     temp_66
+     &                                    temp_33,temp_33_tw
+      double precision, dimension(3,3,3,3) :: stiffness,
+     &                                        stiffness_tw
 c
       n_variant=12
 c
@@ -4854,20 +4886,6 @@ c
 c        get the twin reflection matrix
 c
       reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
-c
-c     Creating 6x6 version of reflection matrix
-c
-      call mm10_rt2rve( reflection_twin,reflection_twin_6 )
-c
-c     Creating 3x3 version of reflection matrix to rotate qs
-c
-      call mm10_rt2rvw( reflection_twin,reflection_twin_s )
-c
-c     Getting transpose of reflection_twin matrix
-c
-      call mm10_a_transpose(reflection_twin,3,3,reflection_twin_t)
-c
-      call mm10_a_transpose(reflection_twin_6,6,6,reflection_twin_6_t)
 c
 c              scalars
 c
@@ -5040,32 +5058,208 @@ c
 c
 c     Updating orientation
 c
-      call mm10_a_mult_type_1(temp_33,inc_props%g,
-     &                        reflection_twin)
-      call mm10_a_mult_type_1(cc_props%g,reflection_twin_t,
-     &                        temp_33)    
+      call mm10_a_rotate_2nd(inc_props%g,
+     &                        reflection_twin,cc_props%g)
+c
+c      creating 3x3x3x3 stiffness tensor and reflecting it
+c
+       call mm10_a_dim4_dim2(inc_props%stiffness,stiffness,1)
+c
+       call mm10_a_rotate_4th(stiffness,reflection_twin,stiffness_tw)
+c
+       call mm10_a_dim4_dim2(cc_props%stiffness,stiffness_tw,0)
 c
 c     Updating ms & qs for twin
 c
       do index_i=1,max_slip_sys
-        call mm10_a_mult_type_2( cc_props%ms(1:6,index_i), 
-     &                          reflection_twin_6,
-     &                          inc_props%ms(1:6,index_i))
-        call mm10_a_mult_type_3( cc_props%qs(1:3,index_i), 
-     &                          reflection_twin_s,
-     &                          inc_props%qs(1:3,index_i))
+        call mm10_a_dim2_dim1(inc_props%ms(1:6,index_i),temp_33,1)
+        call mm10_a_rotate_2nd(temp_33,reflection_twin,temp_33_tw)
+        call mm10_a_dim2_dim1(cc_props%ms(1:6,index_i),temp_33_tw,0)
+c
+        call mm10_wv2wt(inc_props%qs(1:3,index_i),temp_33)
+        call mm10_a_rotate_2nd(temp_33,reflection_twin,temp_33_tw)
+        call mm10_wt2wv(temp_33_tw,cc_props%qs(1:3,index_i))
       end do
 c
-c     Updating stiffness for twin
-c
-      call mm10_a_mult_type_6(inc_props%stiffness,
-     &      reflection_twin_6_t,
-     &      temp_66)
-      call mm10_a_mult_type_6(reflection_twin_6,
-     &      temp_66,
-     &      cc_props%stiffness)
       call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
      &                         3*max_slip_sys )
 c
       return
       end subroutine
+c
+c   ********************************************************************      
+c   *                                                                  *
+c   *  Subroutine conversion between 4th order tensor and 6x6 matrix   *
+c   *                                                                  *
+c   ********************************************************************
+c
+      subroutine mm10_a_dim4_dim2(C2,C4,flag)
+
+      implicit none
+
+      integer, intent(in) :: flag
+      integer :: iavj(6,2), i1, i2, j1, j2, i, j
+
+      double precision :: C2(6,6),C4(3,3,3,3)
+
+      data iavj/ 1,2,3,1,1,2 ,1,2,3,2,3,3/
+
+
+            if (flag==0) then ! Convert C4 to C2
+c      Potential bug here...c2 outside if was 0
+                  C2 = 0.d0
+
+                do i = 1,6
+                     i1 = iavj(i,1)
+                     i2 = iavj(i,2)
+                     do j = 1,6
+                            j1 = iavj(j,1)
+                            j2 = iavj(j,2)
+
+                            if (j<=3) then
+                                 C2(i,j) = C4(i1,i2,j1,j2)
+                            else
+                                 C2(i,j) = 0.5d0 * (C4(i1,i2,j1,j2) + 
+     &                                    C4(i1,i2,j2,j1))
+                            end if
+                     end do
+                end do
+     
+          else if (flag==1) then ! Convert C2 to C4
+
+          C4 = 0.d0
+
+          do i=1,6
+              i1 = iavj(i,1)
+              i2 = iavj(i,2)
+              do j = 1,6
+                  j1 = iavj(j,1)
+                  j2 = iavj(j,2)
+                  C4(i1,i2,j1,j2) = C2(i,j)
+                  C4(i2,i1,j1,j2) = C2(i,j)
+                  C4(i1,i2,j2,j1) = C2(i,j)
+                  C4(i2,i1,j2,j1) = C2(i,j)
+              end do
+          end do
+
+            else
+
+          print *, "Error in abaqus_voigt flag"
+          !!pause
+
+            end if
+         
+            return
+
+          end subroutine mm10_a_dim4_dim2
+c
+c   ********************************************************************      
+c   *                                                                  *
+c   *  Subroutine conversion between tensor and vector                 *
+c   *                                                                  *
+c   ********************************************************************
+c
+      subroutine mm10_a_dim2_dim1(C1,C2,flag)
+
+      implicit none
+
+      integer, intent(in) :: flag
+      integer :: i1, j1 , k , iavj(6,2)
+
+      data iavj/ 1,2,3,1,1,2 ,1,2,3,2,3,3/
+
+      double precision  :: C1(6),C2(3,3)
+
+      if (flag==0) then ! Convert C2 to C1
+
+          C1 = 0.d0
+
+          do k = 1,6
+              i1 = iavj(k,1)
+              j1 = iavj(k,2)
+              C1(k) = C2(i1,j1)
+          end do
+
+      else if (flag==1) then! Convert C1 to C2
+
+          C2 = 0.d0
+
+          do k = 1,6
+              i1 = iavj(k,1)
+              j1 = iavj(k,2)
+              C2(i1,j1) = C1(k)
+              C2(j1,i1) = C1(k)
+          end do
+
+      else
+
+          print *, "Error in voigt flag"
+          call die_gracefully
+
+      end if
+
+      return
+
+      end subroutine mm10_a_dim2_dim1
+c
+c   ********************************************************************      
+c   *                                                                  *
+c   *  Subroutine to rotate 4th rank tensor by q                       *
+c   *                                                                  *
+c   ********************************************************************
+c
+      subroutine mm10_a_rotate_4th(ec,q,eg)
+      implicit none
+      double precision, parameter :: zero=0.d0
+      double precision,dimension(3,3,3,3)::ec,eg
+      double precision, dimension(3,3) ::q
+      integer :: i,j,k,l,m,mm,n,nn
+c
+        do i=1,3
+        do j=1,3
+        do k=1,3
+        do l=1,3
+        eg(i,j,k,l)=0
+            do m=1,3
+                do n=1,3
+                    do mm=1,3
+                        do nn=1,3
+                        eg(i,j,k,l)=eg(i,j,k,l)+ q(i,m)*q(j,n)*
+     &                  q(k,mm)*q(l,nn)*ec(m,n,mm,nn)
+                        enddo
+                    enddo
+                enddo
+            enddo
+        enddo
+        enddo
+        enddo
+        enddo
+c
+      return
+      end subroutine mm10_a_rotate_4th
+c
+c   ********************************************************************      
+c   *                                                                  *
+c   *  Subroutine to rotate 2nd rank tensor by q                       *
+c   *                                                                  *
+c   ********************************************************************
+c
+      subroutine mm10_a_rotate_2nd(ec,q,eg)
+      implicit none
+      double precision, parameter :: zero=0.d0
+      double precision,dimension(3,3)::ec,eg,q
+      integer :: i,j,k,l,m,mm,n,nn
+c
+        do i=1,3
+        do j=1,3
+        eg(i,j)=0
+        do k=1,3
+        do l=1,3
+       eg(i,j)=eg(i,j)+ q(i,k)*q(j,l)*ec(k,l)                       
+        enddo
+        enddo
+        enddo
+        enddo
+c
+      return
+      end subroutine mm10_a_rotate_2nd
