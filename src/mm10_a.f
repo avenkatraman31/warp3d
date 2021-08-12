@@ -303,7 +303,7 @@ c
      &        work_vec1, work_vec2, ! read only in subroutine
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
-     &        local_work%gpn, cc_np1_twin,cc_n_twin )
+     &        local_work%gpn, cc_np1_twin,cc_n_twin,cc_props_twin )
 c
 c
         print*, 'twin incepted'
@@ -342,7 +342,7 @@ c
      &        work_vec1, work_vec2, ! read only in subroutine
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
-     &        local_work%gpn, cc_np1_twin,cc_n_twin )
+     &        local_work%gpn, cc_np1_twin,cc_n_twin ,cc_props_twin )
         call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
      &        cc_n_twin,
      &        local_work%material_cut_step, iout, .false., 0,
@@ -2146,13 +2146,14 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_setup_np1_twin( Rur, dstrain, dt, T, step, elem,
-     &                           iter, gp, np1,n )
+     &                           iter, gp, np1,n,props )
       use mm10_defs
       use mm10_constants
       implicit none
 c
       integer :: step, elem, gp, iter
       type(crystal_state) :: np1,n
+      type(crystal_props) :: props
       double precision :: Rur(3,3), dstrain(6)
       double precision :: dt, T
 c
@@ -2210,18 +2211,21 @@ c
         np1%Rp(3,j) = n%Rp(3,j)
       end do
 c
-      call mm10_a_zero_vec( np1%gradFeinv, 27 )
-      call mm10_a_zero_vec( np1%tangent, 36 )
-      call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
-      call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
-      call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
+      ! call mm10_a_zero_vec( np1%gradFeinv, 27 )
+      ! call mm10_a_zero_vec( np1%tangent, 36 )
+      ! call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
+      ! call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
+      ! call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
-c      twin flag
+      call mm10_a_copy_vec( np1%gradFeinv,n%gradFeinv, 27 )
+      call mm10_a_copy_vec( np1%tangent,n%tangent, 36 )
+      call mm10_a_copy_vec( np1%ms,props%ms, 6*max_slip_sys )
+      call mm10_a_copy_vec( np1%qs, props%qs,3*max_slip_sys )
+      call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
       return
 c
       end
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -5079,10 +5083,11 @@ c
         call mm10_wv2wt(inc_props%qs(1:3,index_i),temp_33)
         call mm10_a_rotate_2nd(temp_33,reflection_twin,temp_33_tw)
         call mm10_wt2wv(temp_33_tw,cc_props%qs(1:3,index_i))
-      end do
 c
-      call mm10_a_copy_vector( cc_props%ns, inc_props%ns,
-     &                         3*max_slip_sys )
+        call mm10_a_mult_type_3(cc_props%ns(1:3,index_i),
+     &                          reflection_twin,
+     &                          inc_props%ns(1:3,index_i))
+      end do
 c
       return
       end subroutine
