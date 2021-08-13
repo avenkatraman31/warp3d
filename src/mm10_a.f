@@ -5146,12 +5146,6 @@ c      Potential bug here...c2 outside if was 0
                   C4(i2,i1,j2,j1) = C2(i,j)
               end do
           end do
-
-            else
-
-          print *, "Error in abaqus_voigt flag"
-          !!pause
-
             end if
          
             return
