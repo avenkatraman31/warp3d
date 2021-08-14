@@ -6373,13 +6373,13 @@ c
       G(7:18,1:3) = one
       G(7:18,4:6) = one
       G(7:18,7:18) = one
-      G(1:3,19:30) = one
-      G(4:6,19:30) = one
-      G(7:18,19:30) = one         
-      G(19:30,19:30) = one
-      G(19:30,1:3) = five
-      G(19:30,4:6) = five
-      G(19:30,7:18) = one
+      G(1:3,19:24) = one
+      G(4:6,19:24) = one
+      G(7:18,19:24) = one         
+      G(19:24,19:24) = one
+      G(19:24,1:3) = five
+      G(19:24,4:6) = five
+      G(19:24,7:18) = one
         else ! calculate manually
            write(*,*) 'cannot use manual interaction G matrix'
            write(*,*) 'routine mm10_avoche_GH. terminate job'

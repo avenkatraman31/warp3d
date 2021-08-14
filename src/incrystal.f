@@ -83,7 +83,7 @@ c
                    c_array(cnum)%slip_type = 9
              elseif( lab(1:nc) .eq. 'hcp18') then
                    c_array(cnum)%slip_type = 10
-             elseif( lab(1:nc) .eq. 'hcp30') then
+             elseif( lab(1:nc) .eq. 'hcp24_t') then
                    c_array(cnum)%slip_type = 11				   
              else
                    call errmsg(353,dumi,dums,dumr,dumd)

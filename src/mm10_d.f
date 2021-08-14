@@ -137,7 +137,6 @@ c
         call die_gracefully
       end if
       if( cur_twin > max_twin_sys ) then
-        print*,'here', cur_twin,max_twin_sys
         write(outdev,9200) 6
         call die_gracefully
       end if

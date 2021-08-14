@@ -279,9 +279,9 @@ c
 c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
 c
-      if(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
+      if(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
      &   cc_n%twinned .eq. 1 ) then
-        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
+        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
@@ -307,22 +307,22 @@ c
 c
 c
         print*, 'twin incepted'
-        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-     &        cc_n_twin,
-     &        local_work%material_cut_step, iout, .false., 0,
-     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
-        if( local_work%material_cut_step ) then
-          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
-          return
-        end if
+        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+      ! &        cc_n_twin,
+      ! &        local_work%material_cut_step, iout, .false., 0,
+      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        ! if( local_work%material_cut_step ) then
+          ! call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          ! return
+        ! end if
         six_plus_num_hard = 6 + cc_props%num_hard
         size_num_hard     = cc_props%num_hard
         size_nslip        = cc_props%nslip
 c
 c
-      elseif(abs(cc_n%u(10)).gt.two*ptone**(two+one) .and. 
+      elseif(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
      &   cc_n%twinned .eq. 2 ) then
-        call mm10_a_max_vector(cc_n%slip_incs(19:30),12,
+        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
@@ -343,14 +343,14 @@ c
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin,cc_n_twin ,cc_props_twin )
-        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-     &        cc_n_twin,
-     &        local_work%material_cut_step, iout, .false., 0,
-     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
-        if( local_work%material_cut_step ) then
-          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
-          return
-        end if
+        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+      ! &        cc_n_twin,
+      ! &        local_work%material_cut_step, iout, .false., 0,
+      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        ! if( local_work%material_cut_step ) then
+          ! call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          ! return
+        ! end if
 c
         six_plus_num_hard = 6 + cc_props%num_hard
         size_num_hard     = cc_props%num_hard
@@ -2217,10 +2217,10 @@ c
       ! call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
       ! call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
-      call mm10_a_copy_vec( np1%gradFeinv,n%gradFeinv, 27 )
-      call mm10_a_copy_vec( np1%tangent,n%tangent, 36 )
-      call mm10_a_copy_vec( np1%ms,props%ms, 6*max_slip_sys )
-      call mm10_a_copy_vec( np1%qs, props%qs,3*max_slip_sys )
+      call mm10_a_copy_vector( np1%gradFeinv,n%gradFeinv, 27 )
+      call mm10_a_copy_vector( np1%tangent,n%tangent, 36 )
+      call mm10_a_copy_vector( np1%ms,props%ms, 6*max_slip_sys )
+      call mm10_a_copy_vector( np1%qs, props%qs,3*max_slip_sys )
       call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
       return
@@ -4408,8 +4408,8 @@ c
 c    Check if twinning has reached critical volume fraction
 c
       if(props%s_type .eq. 11 .and. props%twinning) then
-        np1%u(10) = n%u(10)+sum(np1%slip_incs(19:30))
-        if(np1%u(10) .gt. two*ptone**(two+one) ) then
+        np1%u(10) = n%u(10)+sum(np1%slip_incs(19:24))
+        if(np1%u(10) .gt. two*ptone**(two) ) then
             if(n%twinned .eq. 0) np1%twinned = 1
             if(n%twinned .eq. 1) np1%twinned = 2
             if(n%twinned .eq. 2) np1%twinned = 2
@@ -4877,14 +4877,12 @@ c
       implicit none
       include 'include_sig_up'
       integer, intent(in) :: variant
-      integer :: index_i,n_variant
+      integer :: index_i
       type(crystal_props) :: inc_props,cc_props
       double precision, dimension(3,3) :: reflection_twin,
      &                                    temp_33,temp_33_tw
       double precision, dimension(3,3,3,3) :: stiffness,
      &                                        stiffness_tw
-c
-      n_variant=12
 c
 c
 c        get the twin reflection matrix
@@ -5247,7 +5245,7 @@ c
       implicit none
       double precision, parameter :: zero=0.d0
       double precision,dimension(3,3)::ec,eg,q
-      integer :: i,j,k,l,m,mm,n,nn
+      integer :: i,j,k,l
 c
         do i=1,3
         do j=1,3

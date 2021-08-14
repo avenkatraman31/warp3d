@@ -437,6 +437,13 @@ c                 and elasticity tensors
                   double precision :: C11,C22,C44,C55,C66
                   double precision :: C12,C33,C13,C23
 c
+c                 Twin system in miller-bravais lattice
+c
+                  double precision,dimension(6,4)::ni_t,bi_t,ni_c,bi_c
+                  double precision :: mag,c_div_a
+                  double precision,parameter::one=1.d0,two=2.d0,
+     &                         zero=0.d0,negone=-1.d0,sqrt3=dsqrt(3.d0)
+c
                   if (num .gt. max_crystals) then
                         write (out,*)
      &                   "Error: crystal number exceeds max crystals."
@@ -1758,7 +1765,10 @@ c                         c_array(num)%ni(30,2)=-sqrt(3.d0)*c/(2*ac1)
 c                         c_array(num)%ni(30,3)=a/ac1
 c HCP: basal, prismatic, 1st-order pyramidal, tensile twinning
                   elseif (c_array(num)%slip_type .eq. 11) then
-                        c_array(num)%nslip = 30
+c
+c                       Writing the slip systems first; twin systems later
+c
+                        c_array(num)%nslip = 24
                         c_array(num)%num_hard = c_array(num)%nslip
                         c_array(num)%n_twin_slip = 18
                         ! material constant of hcp
@@ -1870,56 +1880,6 @@ c
                         c_array(num)%bi(24-6,1)=a/(2.d0*ac1)
                         c_array(num)%bi(24-6,2)=sqrt(3.d0)*a/(2.d0*ac1)
                         c_array(num)%bi(24-6,3)=c/ac1
-c 
-c                       ! Tensile Twin Slip Systems {1 0 -1 2}<-1 0 1 1>
-                        ! R19
-                        c_array(num)%bi(19,1)=-a/(2.d0*ac1)
-                        c_array(num)%bi(19,2)=sqrt(3.d0)*a/(2.d0*ac1)
-                        c_array(num)%bi(19,3)=c/ac1
-                        ! R20
-                        c_array(num)%bi(20,1)=-a/ac1
-                        c_array(num)%bi(20,2)=0.d0
-                        c_array(num)%bi(20,3)=c/ac1
-                        ! R21
-                        c_array(num)%bi(21,1)=-a/(2.d0*ac1)
-                        c_array(num)%bi(21,2)=-sqrt(3.d0)*a/(2.d0*ac1)
-                        c_array(num)%bi(21,3)=c/ac1
-                        ! R22
-                        c_array(num)%bi(22,1)=a/(2.d0*ac1)
-                        c_array(num)%bi(22,2)=-sqrt(3.d0)*a/(2.d0*ac1)
-                        c_array(num)%bi(22,3)=c/ac1
-                        ! R23
-                        c_array(num)%bi(23,1)=a/ac1
-                        c_array(num)%bi(23,2)=0.d0
-                        c_array(num)%bi(23,3)=c/ac1
-                        ! R24
-                        c_array(num)%bi(24,1)=a/(2.d0*ac1)
-                        c_array(num)%bi(24,2)=sqrt(3.d0)*a/(2.d0*ac1)
-                        c_array(num)%bi(24,3)=c/ac1
-                         ! R25
-                         c_array(num)%bi(25,1)=-a/(2*ac1)
-                         c_array(num)%bi(25,2)=sqrt(3.d0)*a/(2*ac1)
-                         c_array(num)%bi(25,3)=c/ac1
-                         ! R26
-                         c_array(num)%bi(26,1)=-a/ac1
-                         c_array(num)%bi(26,2)=0
-                         c_array(num)%bi(26,3)=c/ac1
-                         ! R27
-                         c_array(num)%bi(27,1)=-a/(2*ac1)
-                         c_array(num)%bi(27,2)=-sqrt(3.d0)*a/(2*ac1)
-                         c_array(num)%bi(27,3)=c/ac1
-                         ! R28
-                         c_array(num)%bi(28,1)=a/(2*ac1)
-                         c_array(num)%bi(28,2)=-sqrt(3.d0)*a/(2*ac1)
-                         c_array(num)%bi(28,3)=c/ac1
-                         ! R29
-                         c_array(num)%bi(29,1)=a/ac1
-                         c_array(num)%bi(29,2)=0
-                         c_array(num)%bi(29,3)=c/ac1
-                         ! R30
-                         c_array(num)%bi(30,1)=a/(2*ac1)
-                         c_array(num)%bi(30,2)=sqrt(3.d0)*a/(2*ac1)
-                         c_array(num)%bi(30,3)=c/ac1
 c -------------------------------------------------------------------------
                         ! Basal Slip Systems {0 0 0 1}<1 1 -2 0>
                         ! B1
@@ -2024,55 +1984,100 @@ c
                         c_array(num)%ni(24-6,1)=-sqrt(3.d0)*c/ac2
                         c_array(num)%ni(24-6,2)=-c/ac2
                         c_array(num)%ni(24-6,3)=sqrt(3.d0)*a/ac2
-                         ! Tensil twin Systems {1 0 -1 2}<-1 0 1 1>
-                        ! R19
-                        c_array(num)%ni(19,1)=0.d0
-                        c_array(num)%ni(19,2)=-2.d0*c/ac2
-                        c_array(num)%ni(19,3)=sqrt(3.d0)*a/ac2
-                        ! R20
-                        c_array(num)%ni(20,1)=sqrt(3.d0)*c/ac2
-                        c_array(num)%ni(20,2)=-c/ac2
-                        c_array(num)%ni(20,3)=sqrt(3.d0)*a/ac2
-                        ! R21
-                        c_array(num)%ni(21,1)=sqrt(3.d0)*c/ac2
-                        c_array(num)%ni(21,2)=c/ac2
-                        c_array(num)%ni(21,3)=sqrt(3.d0)*a/ac2
-                        ! R22
-                        c_array(num)%ni(22,1)=0.d0
-                        c_array(num)%ni(22,2)=2.d0*c/ac2
-                        c_array(num)%ni(22,3)=sqrt(3.d0)*a/ac2
-                        ! R23
-                        c_array(num)%ni(23,1)=-sqrt(3.d0)*c/ac2
-                        c_array(num)%ni(23,2)=c/ac2
-                        c_array(num)%ni(23,3)=sqrt(3.d0)*a/ac2
-                        ! R24
-                        c_array(num)%ni(24,1)=-sqrt(3.d0)*c/ac2
-                        c_array(num)%ni(24,2)=-c/ac2
-                        c_array(num)%ni(24,3)=sqrt(3.d0)*a/ac2
-                         ! R25
-                         c_array(num)%ni(25,1)=c/(2*ac1)
-                         c_array(num)%ni(25,2)=-sqrt(3.d0)*c/(2*ac1)
-                         c_array(num)%ni(25,3)=a/ac1
-                         ! R26
-                         c_array(num)%ni(26,1)=c/ac1
-                         c_array(num)%ni(26,2)=0
-                         c_array(num)%ni(26,3)=a/ac1
-                         ! R27
-                         c_array(num)%ni(27,1)=c/(2*ac1)
-                         c_array(num)%ni(27,2)=sqrt(3.d0)*c/(2*ac1)
-                         c_array(num)%ni(27,3)=a/ac1
-                         ! R28
-                         c_array(num)%ni(28,1)=-c/(2*ac1)
-                         c_array(num)%ni(28,2)=sqrt(3.d0)*c/(2*ac1)
-                         c_array(num)%ni(28,3)=a/ac1
-                         ! R29
-                         c_array(num)%ni(29,1)=-c/ac1
-                         c_array(num)%ni(29,2)=0
-                         c_array(num)%ni(29,3)=a/ac1
-                         ! R30
-                         c_array(num)%ni(30,1)=-c/(2*ac1)
-                         c_array(num)%ni(30,2)=-sqrt(3.d0)*c/(2*ac1)
-                         c_array(num)%ni(30,3)=a/ac1
+c
+c                       Writing the tensile twin normals and slip directions
+c
+                        c_div_a=c/a
+                        ! Variant 1
+                        ni_t(19-18,1)=zero
+                        ni_t(19-18,2)=negone
+                        ni_t(19-18,3)=one 
+                        ni_t(19-18,4)=two
+                        ! Variant 2
+                        ni_t(20-18,1)=one
+                        ni_t(20-18,2)=zero
+                        ni_t(20-18,3)=negone
+                        ni_t(20-18,4)=two
+                        ! Variant 3
+                        ni_t(21-18,1)=negone
+                        ni_t(21-18,2)=one
+                        ni_t(21-18,3)=zero
+                        ni_t(21-18,4)=two
+                        ! Variant 4
+                        ni_t(22-18,1)=zero
+                        ni_t(22-18,2)=one
+                        ni_t(22-18,3)=negone
+                        ni_t(22-18,4)=two
+                        ! Variant 5
+                        ni_t(23-18,1)=negone
+                        ni_t(23-18,2)=zero
+                        ni_t(23-18,3)=one
+                        ni_t(23-18,4)=two
+                        ! Variant 6
+                        ni_t(24-18,1)=one
+                        ni_t(24-18,2)=negone
+                        ni_t(24-18,3)=zero
+                        ni_t(24-18,4)=two
+                        ! Variant 1
+                        bi_t(19-18,1)=zero
+                        bi_t(19-18,2)=one
+                        bi_t(19-18,3)=negone 
+                        bi_t(19-18,4)=one
+                        ! Variant 2
+                        bi_t(20-18,1)=negone
+                        bi_t(20-18,2)=zero
+                        bi_t(20-18,3)=one
+                        bi_t(20-18,4)=one
+                        ! Variant 3
+                        bi_t(21-18,1)=one
+                        bi_t(21-18,2)=negone
+                        bi_t(21-18,3)=zero
+                        bi_t(21-18,4)=one
+                        ! Variant 4
+                        bi_t(22-18,1)=zero
+                        bi_t(22-18,2)=negone
+                        bi_t(22-18,3)=one
+                        bi_t(22-18,4)=one
+                        ! Variant 5
+                        bi_t(23-18,1)=one
+                        bi_t(23-18,2)=zero
+                        bi_t(23-18,3)=negone
+                        bi_t(23-18,4)=one
+                        ! Variant 6
+                        bi_t(24-18,1)=negone
+                        bi_t(24-18,2)=one
+                        bi_t(24-18,3)=zero
+                        bi_t(24-18,4)=one
+                        do k=1,6
+                          c_array(cnum)%ni(k+18,1)=ni_t(k,1)
+                          c_array(cnum)%ni(k+18,2)=(ni_t(k,1)+
+     &                                 two*ni_t(k,2))/sqrt3
+                          c_array(cnum)%ni(k+18,3)=ni_t(k,4)/c_div_a
+                          c_array(cnum)%bi(k+18,1)=3.d0*bi_t(k,1)
+                          c_array(cnum)%bi(k+18,2)=(bi_t(k,1)/two+
+     &                                 bi_t(k,2))*sqrt3
+                          c_array(cnum)%bi(k+18,3)=bi_t(k,4)*c_div_a
+                        end do
+                        do k=19,24
+                          mag=one/dsqrt(c_array(cnum)%ni(k,1)**two+
+     &                                  c_array(cnum)%ni(k,2)**two+
+     &                                  c_array(cnum)%ni(k,3)**two)
+                          c_array(cnum)%ni(k,1)=c_array(cnum)%ni(k,1)
+     &                                          *mag
+                          c_array(cnum)%ni(k,2)=c_array(cnum)%ni(k,2)
+     &                                          *mag
+                          c_array(cnum)%ni(k,3)=c_array(cnum)%ni(k,3)
+     &                                          *mag
+                          mag=one/dsqrt(c_array(cnum)%bi(k,1)**two+
+     &                                  c_array(cnum)%bi(k,2)**two+
+     &                                  c_array(cnum)%bi(k,3)**two)
+                          c_array(cnum)%bi(k,1)=c_array(cnum)%bi(k,1)
+     &                                          *mag
+                          c_array(cnum)%bi(k,2)=c_array(cnum)%bi(k,2)
+     &                                          *mag
+                          c_array(cnum)%bi(k,3)=c_array(cnum)%bi(k,3)
+     &                                          *mag
+                        end do      
                   else
                         write (out,*) "Error: invalid slip type."
                         call die_gracefully
@@ -2114,7 +2119,7 @@ c                          c_array(num)%tang_calc = 0
 c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 10) then !anisotropic voche
                           c_array(num)%num_hard = c_array(num)%nslip
-c                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 1
                   else
                      write(*,101) c_array(num)%h_type
  101  format(
@@ -2358,66 +2363,64 @@ c
 c
 c
       module twin_variants
-      double precision, dimension(12,3) :: n_twins
-      double precision, dimension(12,3,3) :: reflection_twins
+      integer, parameter :: n_variant=6
+      double precision, dimension(n_variant,3) :: n_twins
+      double precision, dimension(n_variant,4) :: n_twins_4
+      double precision, dimension(n_variant,3,3) :: reflection_twins
       contains
       subroutine define_twin_variants()
         implicit none
         integer :: i,j,k
-		double precision :: a,c,ac1,ac2
+        double precision :: a,c,ac1,ac2,c_div_a
+        double precision, parameter ::one=1.d0,two=2.d0,negone=-1.d0,
+     &                                zero=0.d0,sqrt3=dsqrt(3.d0)
+        double precision :: mag
                         a = 0.295d0
                         c = 0.468d0
-                        ac1 = sqrt(c**2+a**2)
-                        ac2 = sqrt(4.d0*c**2+3.d0*a**2)
+                        c_div_a=c/a
                         ! Variant 1
-                        n_twins(19-18,1)=0.d0
-                        n_twins(19-18,2)=-2.d0*c/ac2
-                        n_twins(19-18,3)=sqrt(3.d0)*a/ac2
+                        n_twins_4(19-18,1)=zero
+                        n_twins_4(19-18,2)=negone
+                        n_twins_4(19-18,3)=one 
+                        n_twins_4(19-18,4)=two
                         ! Variant 2
-                        n_twins(20-18,1)=sqrt(3.d0)*c/ac2
-                        n_twins(20-18,2)=-c/ac2
-                        n_twins(20-18,3)=sqrt(3.d0)*a/ac2
+                        n_twins_4(20-18,1)=one
+                        n_twins_4(20-18,2)=zero
+                        n_twins_4(20-18,3)=negone
+                        n_twins_4(20-18,4)=two
                         ! Variant 3
-                        n_twins(21-18,1)=sqrt(3.d0)*c/ac2
-                        n_twins(21-18,2)=c/ac2
-                        n_twins(21-18,3)=sqrt(3.d0)*a/ac2
+                        n_twins_4(21-18,1)=negone
+                        n_twins_4(21-18,2)=one
+                        n_twins_4(21-18,3)=zero
+                        n_twins_4(21-18,4)=two
                         ! Variant 4
-                        n_twins(22-18,1)=0.d0
-                        n_twins(22-18,2)=2.d0*c/ac2
-                        n_twins(22-18,3)=sqrt(3.d0)*a/ac2
+                        n_twins_4(22-18,1)=zero
+                        n_twins_4(22-18,2)=one
+                        n_twins_4(22-18,3)=negone
+                        n_twins_4(22-18,4)=two
                         ! Variant 5
-                        n_twins(23-18,1)=-sqrt(3.d0)*c/ac2
-                        n_twins(23-18,2)=c/ac2
-                        n_twins(23-18,3)=sqrt(3.d0)*a/ac2
+                        n_twins_4(23-18,1)=negone
+                        n_twins_4(23-18,2)=zero
+                        n_twins_4(23-18,3)=one
+                        n_twins_4(23-18,4)=two
                         ! Variant 6
-                        n_twins(24-18,1)=-sqrt(3.d0)*c/ac2
-                        n_twins(24-18,2)=-c/ac2
-                        n_twins(24-18,3)=sqrt(3.d0)*a/ac2
-                         ! Variant 7
-                         n_twins(25-18,1)=c/(2*ac1)
-                         n_twins(25-18,2)=-sqrt(3.d0)*c/(2*ac1)
-                         n_twins(25-18,3)=a/ac1
-                         ! Variant 8
-                         n_twins(26-18,1)=c/ac1
-                         n_twins(26-18,2)=0
-                         n_twins(26-18,3)=a/ac1
-                         ! Variant 9
-                         n_twins(27-18,1)=c/(2*ac1)
-                         n_twins(27-18,2)=sqrt(3.d0)*c/(2*ac1)
-                         n_twins(27-18,3)=a/ac1
-                         ! Variant 10
-                         n_twins(28-18,1)=-c/(2*ac1)
-                         n_twins(28-18,2)=sqrt(3.d0)*c/(2*ac1)
-                         n_twins(28-18,3)=a/ac1
-                         ! Variant 11
-                         n_twins(29-18,1)=-c/ac1
-                         n_twins(29-18,2)=0
-                         n_twins(29-18,3)=a/ac1
-                         ! Variant 12
-                         n_twins(30-18,1)=-c/(2*ac1)
-                         n_twins(30-18,2)=-sqrt(3.d0)*c/(2*ac1)
-                         n_twins(30-18,3)=a/ac1 
-        do k=1,12
+                        n_twins_4(24-18,1)=one
+                        n_twins_4(24-18,2)=negone
+                        n_twins_4(24-18,3)=zero
+                        n_twins_4(24-18,4)=two
+        do k=1,n_variant
+          n_twins(k,1)=n_twins_4(k,1)
+          n_twins(k,2)=(n_twins_4(k,1)+two*n_twins_4(k,2))/sqrt3
+          n_twins(k,3)=n_twins_4(k,4)/c_div_a
+        end do
+        do k=1,n_variant
+          mag=one/dsqrt(n_twins(k,1)**two+n_twins(k,2)**two+
+     &         n_twins(k,3)**two)
+          n_twins(k,1)=n_twins(k,1)*mag
+          n_twins(k,2)=n_twins(k,2)*mag
+          n_twins(k,3)=n_twins(k,3)*mag
+        end do      
+        do k=1,n_variant
           do i=1,3
             do j=1,3
               reflection_twins(k,i,j)=2.d0*n_twins(k,i)*n_twins(k,j)
