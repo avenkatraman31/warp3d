@@ -2119,7 +2119,7 @@ c                          c_array(num)%tang_calc = 0
 c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 10) then !anisotropic voche
                           c_array(num)%num_hard = c_array(num)%nslip
-c                          c_array(num)%tang_calc = 1
+c                          c_array(num)%tang_calc = 0
                   else
                      write(*,101) c_array(num)%h_type
  101  format(

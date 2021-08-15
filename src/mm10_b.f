@@ -2336,7 +2336,7 @@ c     *                                                              *
 c     *                   last modified: 07/18/21                    *
 c     *                                                              *
 c     *     Calculate partial gamma(s) w.r.t. tau(s) for each slip   *
-c     *     system, for use in J11 in material integration. DJGM     *
+c     *     system, for use in J11 in material integration.          *
 c     *                                                              *
 c     ****************************************************************
 c

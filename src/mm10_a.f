@@ -280,7 +280,7 @@ c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
 c
       if(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
-     &   cc_n%twinned .eq. 1 ) then
+     &   cc_n%twinned .eq. 1  .and. cc_props%twinning) then
         call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
@@ -307,21 +307,21 @@ c
 c
 c
         print*, 'twin incepted'
-        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-      ! &        cc_n_twin,
-      ! &        local_work%material_cut_step, iout, .false., 0,
-      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
-        ! if( local_work%material_cut_step ) then
-          ! call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
-          ! return
-        ! end if
+        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+     &        cc_n_twin,
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        if( local_work%material_cut_step ) then
+          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          return
+        end if
         six_plus_num_hard = 6 + cc_props%num_hard
         size_num_hard     = cc_props%num_hard
         size_nslip        = cc_props%nslip
 c
 c
       elseif(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
-     &   cc_n%twinned .eq. 2 ) then
+     &   cc_n%twinned .eq. 2  .and. cc_props%twinning) then
         call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
@@ -343,14 +343,14 @@ c
      &        local_work%dt, gp_temps(iloop), local_work%step,
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin,cc_n_twin ,cc_props_twin )
-        ! call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
-      ! &        cc_n_twin,
-      ! &        local_work%material_cut_step, iout, .false., 0,
-      ! &        p_strain_ten_c_twin, iter_0_extrapolate_off )
-        ! if( local_work%material_cut_step ) then
-          ! call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
-          ! return
-        ! end if
+        call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
+     &        cc_n_twin,
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c_twin, iter_0_extrapolate_off )
+        if( local_work%material_cut_step ) then
+          call mm10_set_cons( local_work, cc_props_twin, 2, i, c )
+          return
+        end if
 c
         six_plus_num_hard = 6 + cc_props%num_hard
         size_num_hard     = cc_props%num_hard
@@ -549,8 +549,15 @@ c
       if( h_type .eq. 9 ) then
        select case( isw )
          case( 1 ) ! allocate G=q,H=many_params matrices
-           allocate( cc_props%Gmat(n_hard,n_hard),
-     &               cc_props%Hmat(7,n_hard), stat=allocate_status)
+          if( .not. allocated(cc_props%Gmat))
+     &      allocate( cc_props%Gmat(n_hard,n_hard),
+     &               stat=allocate_status)
+           if( allocate_status .ne. 0 ) then
+              write(*,*) ' error allocating G matrix'
+              call die_gracefully
+           end if
+          if( .not. allocated(cc_props%Hmat))
+     &      allocate(cc_props%Hmat(7,n_hard), stat=allocate_status)
            if( allocate_status .ne. 0 ) then
               write(*,*) ' error allocating G matrix'
               call die_gracefully
@@ -2564,7 +2571,7 @@ c
                 tau_tilde(7:18) = props%cp_007
       elseif( props%s_type .eq. 11 ) then
                 tau_tilde(7:18) = props%cp_007
-                tau_tilde(19:30) = props%cp_008
+                tau_tilde(19:24) = props%cp_008
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -2904,12 +2911,12 @@ c
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-                tau_tilde(19:30) = props%G_0_v
+                tau_tilde(19:24) = props%G_0_v
       elseif( props%s_type .eq. 11 ) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-                tau_tilde(19:30) = props%G_0_v
+                tau_tilde(19:24) = props%G_0_v
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -2965,12 +2972,12 @@ c
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-                tau_tilde(19:30) = props%G_0_v              
+                tau_tilde(19:24) = props%G_0_v              
       elseif( props%s_type .eq. 11 ) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-                tau_tilde(19:30) = props%G_0_v
+                tau_tilde(19:24) = props%G_0_v
       else
           write(props%out,101) props%s_type
           call die_gracefully

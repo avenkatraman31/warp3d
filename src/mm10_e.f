@@ -6226,9 +6226,10 @@ c
       integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G
       double precision, dimension(7,num_hard) ::  H
-      double precision :: one
+      double precision :: one,five
 c
       one = 1.d0
+      five=5.d0
 c
         if( s_type .eq. 7 ) then ! BCC12
 c       Parameters
@@ -6257,9 +6258,7 @@ c       Parameters
       H(5,4:6) = local_work%c_props(i,c)%q_v
       H(6,4:6) = local_work%c_props(i,c)%tau_a
       H(7,4:6) = local_work%c_props(i,c)%eps_dot_o_y
-c     q matrix
-      G(1:6,1:6) = one
-        elseif( s_type .eq. 10 .or. s_type .eq. 11) then ! HCP18
+        elseif( s_type .eq. 10 ) then ! HCP18
 c       Parameters
       H(1,1:3) = local_work%c_props(i,c)%u1
       H(2,1:3) = local_work%c_props(i,c)%u4
@@ -6282,26 +6281,103 @@ c       Parameters
       H(5,7:18) = local_work%c_props(i,c)%boltzman
       H(6,7:18) = local_work%c_props(i,c)%tauHat_v
       H(7,7:18) = local_work%c_props(i,c)%Go_v
-c     q matrix
-      G(1:18,1:18) = one
+c
 c     DJGM with twinning systems
-        if(local_work%c_props(i,c)%nslip .eq. 30) then
-        H(1,19:30) = local_work%c_props(i,c)%u3
-        H(2,19:30) = local_work%c_props(i,c)%u6
-        H(3,19:30) = local_work%c_props(i,c)%u9
-        H(4,19:30) = local_work%c_props(i,c)%p_v
-        H(5,19:30) = local_work%c_props(i,c)%boltzman
-        H(6,19:30) = local_work%c_props(i,c)%tauHat_v
-        H(7,19:30) = local_work%c_props(i,c)%Go_v
-c       q matrix
-        G(1:30,1:30) = one
-        endif
+c
+        elseif(s_type .eq. 11) then
+c       Parameters
+      H(1,1:3) = local_work%c_props(i,c)%u1
+      H(2,1:3) = local_work%c_props(i,c)%u4
+      H(3,1:3) = local_work%c_props(i,c)%u7
+      H(4,1:3) = local_work%c_props(i,c)%u10
+      H(5,1:3) = local_work%c_props(i,c)%q_y
+      H(6,1:3) = local_work%c_props(i,c)%burgers
+      H(7,1:3) = local_work%c_props(i,c)%Go_y
+      H(1,4:6) = local_work%c_props(i,c)%u2
+      H(2,4:6) = local_work%c_props(i,c)%u5
+      H(3,4:6) = local_work%c_props(i,c)%u8
+      H(4,4:6) = local_work%c_props(i,c)%p_y
+      H(5,4:6) = local_work%c_props(i,c)%q_v
+      H(6,4:6) = local_work%c_props(i,c)%tau_a
+      H(7,4:6) = local_work%c_props(i,c)%eps_dot_o_y
+      H(1,7:18) = local_work%c_props(i,c)%u3
+      H(2,7:18) = local_work%c_props(i,c)%u6
+      H(3,7:18) = local_work%c_props(i,c)%u9
+      H(4,7:18) = local_work%c_props(i,c)%p_v
+      H(5,7:18) = local_work%c_props(i,c)%boltzman
+      H(6,7:18) = local_work%c_props(i,c)%tauHat_v
+      H(7,7:18) = local_work%c_props(i,c)%Go_v
+      H(1,19:24) = local_work%c_props(i,c)%u3
+      H(2,19:24) = local_work%c_props(i,c)%u6
+      H(3,19:24) = local_work%c_props(i,c)%u9
+      H(4,19:24) = local_work%c_props(i,c)%p_v
+      H(5,19:24) = local_work%c_props(i,c)%boltzman
+      H(6,19:24) = local_work%c_props(i,c)%tauHat_v
+      H(7,19:24) = local_work%c_props(i,c)%Go_v
+c
         else ! calculate manually
            write(*,*) 'cannot use manual interaction G,H matrices'
            write(*,*) 'routine mm10_DJGM_GH. terminate job'
            call die_gracefully
         endif
 c
+c         Allocating q matrix
+c
+        if( s_type .eq. 9 ) then ! HCP6
+c       Parameters
+c       q matrix
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+c
+        elseif( s_type .eq. 10) then ! HCP18
+c
+c       Parameters
+c       q matrix
+c
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(1:3,7:18) = one
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+      G(4:6,7:18) = one
+      G(7:18,1:3) = one
+      G(7:18,4:6) = one
+      G(7:18,7:18) = one
+c    
+c       anistropic voche with twinning systems
+c
+       elseif(s_type .eq. 11) then!HCP30 
+c
+c       Parameters
+c       q matrix
+c
+      G(1:3,1:3) = five
+      G(1:3,4:6) = five
+      G(4:6,1:3) = one
+      G(4:6,4:6) = five
+      G(1:3,7:18) = one
+      G(4:6,7:18) = one
+      G(7:18,1:3) = one
+      G(7:18,4:6) = one
+      G(7:18,7:18) = one
+      G(1:3,19:24) = one
+      G(4:6,19:24) = one
+      G(7:18,19:24) = one         
+      G(19:24,19:24) = one
+      G(19:24,1:3) = five
+      G(19:24,4:6) = five
+      G(19:24,7:18) = one
+        else ! calculate manually
+           write(*,*) 'cannot use manual interaction G matrix'
+           write(*,*) 'routine mm10_avoche_GH. terminate job'
+           call die_gracefully
+        endif
       return
       end subroutine
 c
