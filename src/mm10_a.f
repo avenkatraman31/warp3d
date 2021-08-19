@@ -5236,7 +5236,7 @@ c
 
 
             if (flag==0) then ! Convert C4 to C2
-c      Potential bug here...c2 outside if was 0
+c      
                   C2 = 0.d0
 
                 do i = 1,6
