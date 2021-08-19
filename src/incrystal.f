@@ -84,7 +84,9 @@ c
              elseif( lab(1:nc) .eq. 'hcp18') then
                    c_array(cnum)%slip_type = 10
              elseif( lab(1:nc) .eq. 'hcp24_t') then
-                   c_array(cnum)%slip_type = 11				   
+                   c_array(cnum)%slip_type = 11
+             elseif( lab(1:nc) .eq. 'hcp24_c') then
+                   c_array(cnum)%slip_type = 12					   
              else
                    call errmsg(353,dumi,dums,dumr,dumd)
              end if
@@ -182,6 +184,13 @@ c
              else
                    call errmsg(364,dumi,dums,dumr,dumd)
              end if
+c
+c Threshold twin vol. fraction
+c
+       elseif(  matchs_exact('gamma_tw') ) then
+          if( .not. numd(c_array(cnum)%gamma_tw) ) then
+                call errmsg(5,dumi,'gamma_tw',dumr,dumd)
+          end if
 c
 c plastic parameters
 c
@@ -358,6 +367,17 @@ c
                 end if
           end if
 c
+c hcp lattice parameters
+c
+       elseif(  matchs_exact('a_hcp') ) then
+          if( .not. numd(c_array(cnum)%a_hcp) ) then
+                call errmsg(5,dumi,'a_hcp',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c_hcp') ) then
+          if( .not. numd(c_array(cnum)%c_hcp) ) then
+                call errmsg(5,dumi,'c_hcp',dumr,dumd)
+          end if
+c
 c synonyms for MRR model
 c
        elseif(  matchs_exact('Q_s') ) then
@@ -431,6 +451,10 @@ c
           if( .not. numd(c_array(cnum)%g_o_v) ) then
                 call errmsg(5,dumi,'g0_7',dumr,dumd)
           end if
+       elseif(  matchs_exact('g0_19') ) then
+          if( .not. numd(c_array(cnum)%cp_001) ) then
+                call errmsg(5,dumi,'g0_19',dumr,dumd)
+          end if
        elseif(  matchs_exact('m_1') ) then
           if( .not. numd(c_array(cnum)%b) ) then
                 call errmsg(5,dumi,'m_1',dumr,dumd)
@@ -442,6 +466,10 @@ c
        elseif(  matchs_exact('m_7') ) then
           if( .not. numd(c_array(cnum)%tau_hat_v) ) then
                 call errmsg(5,dumi,'m_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('m_19') ) then
+          if( .not. numd(c_array(cnum)%cp_002) ) then
+                call errmsg(5,dumi,'m_19',dumr,dumd)
           end if
        elseif(  matchs_exact('r_1') ) then
           if( .not. numd(c_array(cnum)%u10) ) then
@@ -455,6 +483,10 @@ c
           if( .not. numd(c_array(cnum)%p_v) ) then
                 call errmsg(5,dumi,'r_7',dumr,dumd)
           end if
+       elseif(  matchs_exact('r_19') ) then
+          if( .not. numd(c_array(cnum)%cp_003) ) then
+                call errmsg(5,dumi,'r_19',dumr,dumd)
+          end if
        elseif(  matchs_exact('n_1') ) then
           if( .not. numd(c_array(cnum)%q_y) ) then
                 call errmsg(5,dumi,'n_1',dumr,dumd)
@@ -466,6 +498,10 @@ c
        elseif(  matchs_exact('n_7') ) then
           if( .not. numd(c_array(cnum)%boltz) ) then
                 call errmsg(5,dumi,'n_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('n_19') ) then
+          if( .not. numd(c_array(cnum)%cp_004) ) then
+                call errmsg(5,dumi,'n_19',dumr,dumd)
           end if
        elseif(  matchs_exact('h0_1') ) then
           if( .not. numd(c_array(cnum)%u1) ) then
@@ -479,6 +515,10 @@ c
           if( .not. numd(c_array(cnum)%u3) ) then
                 call errmsg(5,dumi,'h0_7',dumr,dumd)
           end if
+       elseif(  matchs_exact('h0_19') ) then
+          if( .not. numd(c_array(cnum)%cp_005) ) then
+                call errmsg(5,dumi,'h0_19',dumr,dumd)
+          end if
        elseif(  matchs_exact('gam_1') ) then
           if( .not. numd(c_array(cnum)%u4) ) then
                 call errmsg(5,dumi,'gam_1',dumr,dumd)
@@ -491,6 +531,10 @@ c
           if( .not. numd(c_array(cnum)%u6) ) then
                 call errmsg(5,dumi,'gam_7',dumr,dumd)
           end if
+       elseif(  matchs_exact('gam_19') ) then
+          if( .not. numd(c_array(cnum)%cp_006) ) then
+                call errmsg(5,dumi,'gam_19',dumr,dumd)
+          end if
        elseif(  matchs_exact('gt_1') ) then
           if( .not. numd(c_array(cnum)%u7) ) then
                 call errmsg(5,dumi,'gt_1',dumr,dumd)
@@ -502,6 +546,10 @@ c
        elseif(  matchs_exact('gt_7') ) then
           if( .not. numd(c_array(cnum)%u9) ) then
                 call errmsg(5,dumi,'gt_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gt_19') ) then
+          if( .not. numd(c_array(cnum)%cp_007) ) then
+                call errmsg(5,dumi,'gt_19',dumr,dumd)
           end if
 c
 c check if twinning is active or not

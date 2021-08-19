@@ -6284,7 +6284,7 @@ c       Parameters
 c
 c     DJGM with twinning systems
 c
-        elseif(s_type .eq. 11) then
+        elseif(s_type .eq. 11 .or. s_type .eq.12) then
 c       Parameters
       H(1,1:3) = local_work%c_props(i,c)%u1
       H(2,1:3) = local_work%c_props(i,c)%u4
@@ -6307,13 +6307,13 @@ c       Parameters
       H(5,7:18) = local_work%c_props(i,c)%boltzman
       H(6,7:18) = local_work%c_props(i,c)%tauHat_v
       H(7,7:18) = local_work%c_props(i,c)%Go_v
-      H(1,19:24) = local_work%c_props(i,c)%u3
-      H(2,19:24) = local_work%c_props(i,c)%u6
-      H(3,19:24) = local_work%c_props(i,c)%u9
-      H(4,19:24) = local_work%c_props(i,c)%p_v
-      H(5,19:24) = local_work%c_props(i,c)%boltzman
-      H(6,19:24) = local_work%c_props(i,c)%tauHat_v
-      H(7,19:24) = local_work%c_props(i,c)%Go_v
+      H(1,19:24) = local_work%c_props(i,c)%cp_005
+      H(2,19:24) = local_work%c_props(i,c)%cp_006
+      H(3,19:24) = local_work%c_props(i,c)%cp_007
+      H(4,19:24) = local_work%c_props(i,c)%cp_003
+      H(5,19:24) = local_work%c_props(i,c)%cp_004
+      H(6,19:24) = local_work%c_props(i,c)%cp_002
+      H(7,19:24) = local_work%c_props(i,c)%cp_001
 c
         else ! calculate manually
            write(*,*) 'cannot use manual interaction G,H matrices'
@@ -6352,7 +6352,7 @@ c
 c    
 c       anistropic voche with twinning systems
 c
-       elseif(s_type .eq. 11) then!HCP30 
+       elseif(s_type .eq. 11  .or.s_type .eq.12) then!HCP30 
 c
 c       Parameters
 c       q matrix
@@ -6435,7 +6435,7 @@ c
 c    
 c       anistropic voche with twinning systems
 c
-       elseif(s_type .eq. 11) then!HCP30 
+       elseif(s_type .eq. 11 .or.s_type .eq.12) then!HCP24
 c
 c       Parameters
 c       q matrix

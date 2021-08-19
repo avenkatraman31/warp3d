@@ -1977,6 +1977,7 @@ c          Twinning stuff
 c
         local_work%c_props(i,c)%twinning = c_array(cnum)%twinning
         local_work%c_props(i,c)%n_twin_slip=c_array(cnum)%n_twin_slip
+        local_work%c_props(i,c)%gamma_tw=c_array(cnum)%gamma_tw
 c
       case( 4 )
 c

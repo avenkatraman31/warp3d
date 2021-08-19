@@ -276,16 +276,18 @@ c
           return
       end if
 c
+c
 c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
 c
-      if(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
-     &   cc_n%twinned .eq. 1  .and. cc_props%twinning) then
+      if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
+c
         call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
      &              cc_props_twin )
+        call mm10_a_tt_inc_twin(cc_props,cc_np1,max_twin_id)
 c
         six_plus_num_hard = 6 + cc_props_twin%num_hard
         size_num_hard     = cc_props_twin%num_hard
@@ -295,7 +297,8 @@ c
 c
         call mm10_init_cc_hist_twin0( cc_props, cc_props_twin,
      &                                cc_n, history_n(iloop,1),
-     &                                span,crys_no, hist_sz )
+     &                                span,crys_no, hist_sz,
+     &                                max_twin_id)
         call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
      &                             work_gradfe,  work_R, ! both readonly,
      &                             cc_props_twin, cc_n_twin )
@@ -305,8 +308,6 @@ c
      &        iloop-1+local_work%felem, local_work%iter,
      &        local_work%gpn, cc_np1_twin,cc_n_twin,cc_props_twin )
 c
-c
-        print*, 'twin incepted'
         call mm10_solve_crystal( cc_props_twin, cc_np1_twin, 
      &        cc_n_twin,
      &        local_work%material_cut_step, iout, .false., 0,
@@ -320,8 +321,8 @@ c
         size_nslip        = cc_props%nslip
 c
 c
-      elseif(abs(cc_n%u(10)).gt.two*ptone**(two) .and. 
-     &   cc_n%twinned .eq. 2  .and. cc_props%twinning) then
+      elseif(cc_n%twinned .eq. 2  .and. cc_props%twinning) then
+c
         call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
@@ -337,7 +338,6 @@ c
         call mm10_copy_cc_hist_twin(crys_no, span, history_n(iloop,1),
      &                             work_gradfe,  work_R, ! both readonly,
      &                             cc_props_twin, cc_n_twin )
-        print*, 'twin continues'
         call mm10_setup_np1_twin(
      &        work_vec1, work_vec2, ! read only in subroutine
      &        local_work%dt, gp_temps(iloop), local_work%step,
@@ -359,8 +359,39 @@ c
 c
       endif
 c
+c           accumulate sums for subsequent averaging for case with twinning
+c          p_strain_inc -> effective plastic increment
+c          p_strain_ten -> plastic strain increment tensor
+c          n_avg -> effective creep exponent
+c
+      if(cc_props%twinning .and. 
+     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2) .and.
+     &   cc_n%u(10) .lt. 9.D0*ptone) then
+c
+        sig_avg      = sig_avg + cc_np1%stress*(one-cc_n%u(10))+
+     &                           cc_np1_twin%stress*(cc_n%u(10))    ! 6x1 vector
+        tang_avg     = tang_avg + cc_np1%tangent*(one-cc_n%u(10))+
+     &                           cc_np1_twin%tangent*(cc_n%u(10))   ! 6x6 matrix
+        len = length_comm_hist(5)
+        slip_avg(1:len) = slip_avg(1:len) + cc_np1%slip_incs(1:len)
+        t_work_inc   = t_work_inc+ cc_np1%work_inc*(one-cc_n%u(10))+
+     &                             cc_np1_twin%work_inc*(cc_n%u(10))
+        p_work_inc   = p_work_inc+ cc_np1%p_work_inc*(one-cc_n%u(10))+
+     &                             cc_np1_twin%p_work_inc*(cc_n%u(10))
+        p_strain_inc = p_strain_inc + 
+     &                           cc_np1%p_strain_inc*(one-cc_n%u(10))+
+     &                           cc_np1_twin%p_strain_inc*(cc_n%u(10))
+        p_strain_ten = p_strain_ten + p_strain_ten_c*(one-cc_n%u(10))+
+     &                           p_strain_ten_c_twin*(cc_n%u(10))
+        n_avg        = n_avg + 
+     &              cc_np1%p_strain_inc*cc_np1%u(12)*(one-cc_n%u(10))+
+     &              cc_np1_twin%p_strain_inc*
+     &              cc_np1_twin%u(12)*(cc_n%u(10))
+c
+      else
+c
 c                  accumulate sums for subsequent averaging
-c                    cp_strain_inc -> effective plastic increment
+c                    p_strain_inc -> effective plastic increment
 c                    p_strain_ten -> plastic strain increment tensor
 c                    n_avg -> effective creep exponent
 c
@@ -372,12 +403,15 @@ c
       p_work_inc   = p_work_inc + cc_np1%p_work_inc
       p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
       p_strain_ten = p_strain_ten + p_strain_ten_c
-      n_avg        = n_avg + cc_np1%p_strain_inc*cc_np1%u(12)
+      n_avg        = n_avg + cc_np1%p_strain_inc*cc_np1%u(12)     
+      endif
 c
 c                  store the CP history for this crystal
 c
       call mm10_store_cryhist( crys_no, span, cc_props, cc_np1,
      &                         cc_n, history_np1(iloop,1) )
+c
+c                  store the CP history for the twinned portion of the crystal
 c
       call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
      &                             cc_np1_twin,cc_n_twin, 
@@ -738,14 +772,15 @@ c
       subroutine mm10_init_cc_hist_twin0( props, props_twin, cc_n,
      &                                 history,
      &                                span, 
-     &                                crys_no, hist_size )
+     &                                crys_no, hist_size, variant )
       use mm10_defs
       use mm10_constants
+      use twin_variants, only : reflection_twins_t,reflection_twins_c
       implicit none
 c
       type(crystal_props) :: props,props_twin
       type(crystal_state) :: cc_n
-      integer,intent(in) :: span, crys_no, hist_size
+      integer,intent(in) :: span, crys_no, hist_size,variant
       double precision :: history(span,*)
 c
       integer :: sh, eh, sh2, eh2, len1, len2
@@ -757,6 +792,13 @@ c
       double precision :: psiK, phiK, thetaK, psi, phi, theta
       double precision, external :: mm10_atan2
       double precision, parameter :: tol=1.0d-16
+c
+c     Additional variable to rotate state quantities
+c
+      double precision, dimension(3,3) :: stress_33,D_33,eps_33,
+     &                           stress_33_tw,D_33_tw,eps_33_tw,
+     &                           reflection_twin
+      double precision, dimension(6) :: stress_6,D_6,eps_6
 c
 c           Computing Re at time-step n using state struct n
 c
@@ -790,11 +832,37 @@ c
         call die_gracefully
       end if
 c
+c
+c        get the twin reflection matrix
+c
+      if(props%s_type .eq. 11) then
+        reflection_twin(1:3,1:3)=reflection_twins_t(variant,1:3,1:3)
+      elseif (props%s_type .eq. 12) then
+        reflection_twin(1:3,1:3)=reflection_twins_c(variant,1:3,1:3)
+      else
+        write(props%out,*) "Invalid slip type for twinning"
+        call die_gracefully
+      endif
+c
+c   Rotating the quantities into the twin frame
+c
+        call mm10_a_dim2_dim1(cc_n%stress,stress_33,1)
+        call mm10_a_dim2_dim1(cc_n%D,D_33,1)
+        call mm10_a_dim2_dim1(cc_n%eps,eps_33,1)
+c
+        call mm10_a_rotate_2nd(stress_33,reflection_twin,stress_33_tw)
+        call mm10_a_rotate_2nd(D_33,reflection_twin,D_33_tw)
+        call mm10_a_rotate_2nd(eps_33,reflection_twin,eps_33)
+c
+        call mm10_a_dim2_dim1(stress_6,stress_33_tw,0)
+        call mm10_a_dim2_dim1(D_6 , D_33_tw,0)
+        call mm10_a_dim2_dim1(eps_6,eps_33_tw,0)
+c
 c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) = cc_n%stress
+      history(1,sh:eh) = stress_6!zero!cc_n%stress
 c
 c              Store Angles at right location
 c
@@ -821,13 +889,13 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = cc_n%D
+      history(1,sh:eh) = D_6!cc_n%D
 c
 c              eps
 c
       sh = index_crys_hist(crys_no,16,1)
       eh = index_crys_hist(crys_no,16,2)
-      history(1,sh:eh) = cc_n%eps
+      history(1,sh:eh) = eps_6!cc_n%eps
 c
 c              slip_incs
 c
@@ -2188,7 +2256,7 @@ c              vectors
 c
       do i = 1, 6
         np1%D(i)      = dstrain(i)
-        np1%stress(i) = n%stress(i)
+        np1%stress(i) = zero!n%stress(i)
         np1%eps(i)    = zero
       end do
 c
@@ -2213,22 +2281,22 @@ c
         np1%R(1,j)  = Rur(1,j)
         np1%R(2,j)  = Rur(2,j)
         np1%R(3,j)  = Rur(3,j)
-        np1%Rp(1,j) = n%Rp(1,j)
-        np1%Rp(2,j) = n%Rp(2,j)
-        np1%Rp(3,j) = n%Rp(3,j)
+        np1%Rp(1,j) = zero!n%Rp(1,j)
+        np1%Rp(2,j) = zero!n%Rp(2,j)
+        np1%Rp(3,j) = zero!n%Rp(3,j)
       end do
 c
-      ! call mm10_a_zero_vec( np1%gradFeinv, 27 )
-      ! call mm10_a_zero_vec( np1%tangent, 36 )
-      ! call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
-      ! call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
-      ! call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
-c
-      call mm10_a_copy_vector( np1%gradFeinv,n%gradFeinv, 27 )
-      call mm10_a_copy_vector( np1%tangent,n%tangent, 36 )
-      call mm10_a_copy_vector( np1%ms,props%ms, 6*max_slip_sys )
-      call mm10_a_copy_vector( np1%qs, props%qs,3*max_slip_sys )
+      call mm10_a_zero_vec( np1%gradFeinv, 27 )
+      call mm10_a_zero_vec( np1%tangent, 36 )
+      call mm10_a_zero_vec( np1%ms, 6*max_slip_sys )
+      call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
       call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
+c
+      ! call mm10_a_copy_vector( np1%gradFeinv,n%gradFeinv, 27 )
+      ! call mm10_a_copy_vector( np1%tangent,n%tangent, 36 )
+      ! call mm10_a_copy_vector( np1%ms,props%ms, 6*max_slip_sys )
+      ! call mm10_a_copy_vector( np1%qs, props%qs,3*max_slip_sys )
+      ! call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
       return
 c
@@ -2368,8 +2436,6 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
-      cc_props%twinning    = inc_props%twinning
-      cc_props%n_twin_slip = inc_props%n_twin_slip
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -2497,6 +2563,20 @@ c
      &                         3*max_slip_sys )
       call mm10_a_copy_vector( cc_props%stiffness,
      &                         inc_props%init_elast_stiff, 36 )
+c
+c   Twinning stuff
+c
+      cc_props%twinning    = inc_props%twinning
+      cc_props%n_twin_slip = inc_props%n_twin_slip
+      cc_props%gamma_tw    = inc_props%gamma_tw
+c
+      if(cc_props%twinning) then
+        if(.not.(cc_props%s_type .eq. 11 
+     &           .or. cc_props%s_type .eq. 12)) then
+          write(cc_props%out,*) "Invalid slip-type for twinning"
+          call die_gracefully
+        endif
+      endif
       return
       end subroutine
 
@@ -2569,7 +2649,7 @@ c ----------------------------------------------------------------------
 c
       if( props%s_type .eq. 10) then
                 tau_tilde(7:18) = props%cp_007
-      elseif( props%s_type .eq. 11 ) then
+      elseif( props%s_type .eq. 11  .or. props%s_type .eq.12 ) then
                 tau_tilde(7:18) = props%cp_007
                 tau_tilde(19:24) = props%cp_008
       else
@@ -2912,7 +2992,7 @@ c
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
                 tau_tilde(19:24) = props%G_0_v
-      elseif( props%s_type .eq. 11 ) then
+      elseif( props%s_type .eq. 11  .or. props%s_type .eq.12) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
@@ -2973,11 +3053,11 @@ c
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
                 tau_tilde(19:24) = props%G_0_v              
-      elseif( props%s_type .eq. 11 ) then
+      elseif( props%s_type .eq. 11  .or. props%s_type .eq.12) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-                tau_tilde(19:24) = props%G_0_v
+                tau_tilde(19:24) = props%cp_001
       else
           write(props%out,101) props%s_type
           call die_gracefully
@@ -4164,7 +4244,7 @@ c
 c
 c              locals
 c
-      integer :: i, info, sysID, numAct, nslip
+      integer :: i, info, sysID, numAct, nslip,islip
       double precision, dimension(6) :: ee, dbarp, ewwe, ep,
      &                                  eeunrot, se, ed, work_vec1
       double precision, dimension(3) :: wp
@@ -4410,16 +4490,24 @@ c
 c
 c           compute accumulated slip system shears
 c
-      np1%u(9) = n%u(9)+sum(np1%slip_incs)
+        do islip=1,props%nslip
+          np1%u(9) = n%u(9)+abs(np1%slip_incs(islip))
+        end do
 c  
 c    Check if twinning has reached critical volume fraction
+c    Also turn off twinning if high value is reached
 c
-      if(props%s_type .eq. 11 .and. props%twinning) then
-        np1%u(10) = n%u(10)+sum(np1%slip_incs(19:24))
-        if(np1%u(10) .gt. two*ptone**(two) ) then
+      if( props%twinning) then
+        do islip=props%n_twin_slip+1,props%nslip
+          np1%u(10) = n%u(10)+abs(np1%slip_incs(islip))
+        end do
+        if((np1%u(10)/props%gamma_tw .gt. two*ptone**(two)) .and.
+     &     (np1%u(10)/props%gamma_tw .lt. 9.d0*ptone)) then
             if(n%twinned .eq. 0) np1%twinned = 1
             if(n%twinned .eq. 1) np1%twinned = 2
             if(n%twinned .eq. 2) np1%twinned = 2
+        elseif((np1%u(10)/props%gamma_tw .gt. 9.d0*ptone)) then
+            np1%twinned = 0
         endif
       endif
 c
@@ -4880,7 +4968,7 @@ c
       subroutine mm10_init_cc_props_twin( inc_props, variant,cc_props )
       use mm10_defs
       use mm10_constants
-      use twin_variants
+      use twin_variants, only : reflection_twins_t,reflection_twins_c
       implicit none
       include 'include_sig_up'
       integer, intent(in) :: variant
@@ -4894,7 +4982,14 @@ c
 c
 c        get the twin reflection matrix
 c
-      reflection_twin(1:3,1:3)=reflection_twins(variant,1:3,1:3)
+      if(inc_props%s_type .eq. 11) then
+        reflection_twin(1:3,1:3)=reflection_twins_t(variant,1:3,1:3)
+      elseif (inc_props%s_type .eq. 12) then
+        reflection_twin(1:3,1:3)=reflection_twins_c(variant,1:3,1:3)
+      else
+        write(inc_props%out,*) "Invalid slip type for twinning"
+        call die_gracefully
+      endif
 c
 c              scalars
 c
@@ -4944,8 +5039,6 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
-      cc_props%twinning    = inc_props%twinning
-      cc_props%n_twin_slip = inc_props%n_twin_slip
 c
       cc_props%cp_001 = inc_props%cp_001
       cc_props%cp_002 = inc_props%cp_002
@@ -5065,6 +5158,13 @@ c
       cc_props%st_it(2) = inc_props%st_it(2)
       cc_props%st_it(3) = inc_props%st_it(3)
 c
+c   Twinning stuff
+c
+      cc_props%twinning    = .false.
+      cc_props%n_twin_slip = inc_props%n_twin_slip
+      cc_props%gamma_tw    = inc_props%gamma_tw
+c
+c
 c     Updating orientation
 c
       call mm10_a_rotate_2nd(inc_props%g,
@@ -5096,6 +5196,26 @@ c
 c
       return
       end subroutine
+c
+c   ********************************************************************      
+c   *                                                                  *
+c   *  Subroutine to shut off evolution of twinning in other systems   *
+c   *                                                                  *
+c   ********************************************************************
+        subroutine mm10_a_tt_inc_twin(props,np1,variant)
+        use mm10_defs, only: crystal_state,crystal_props
+        implicit none
+        type(crystal_state)::np1
+        type(crystal_props),intent(in)::props
+        integer,intent(in)::variant
+        double precision, parameter :: thou=1.0d3
+        integer :: islip
+        do islip=props%n_twin_slip+1,props%nslip
+            if(islip.ne.variant+18) 
+     &        np1%tau_tilde(islip)=thou*np1%tau_tilde(islip)
+        end do
+        return 
+        end subroutine mm10_a_tt_inc_twin
 c
 c   ********************************************************************      
 c   *                                                                  *

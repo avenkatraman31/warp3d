@@ -51,6 +51,7 @@ c              new variables to control local solvers inside mm10
 c           Twinning stuff
             integer :: n_twin_slip
             logical :: twinning
+            double precision :: gamma_tw
       end type
 c
       type :: nonlinear_sigeps_work

@@ -431,6 +431,255 @@ c
      & /,    '                job aborted',//)
 c
       end subroutine mm10_states_labels_type_7
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *             subroutine mm10_states_labels_type_8             *
+c     *                                                              *
+c     *                       written by : av                        *
+c     *                                                              *
+c     *               last modified : 8/7/2021  (av)                 *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_states_labels_type_8
+      use mm10_defs, only : length_crys_hist, length_comm_hist
+      implicit none
+c
+      integer :: num_states_here, i, s, nc, cry_id, hard_no, slip_sys
+      character(len=4) :: crystal_id
+      character(len=2) :: hard_id, slip_sys_id
+c
+c              sanity check
+c
+      num_states_here = 21 + length_comm_hist(5) 
+     &  + nterms_crystal_list *
+     &  ( 6 + 3 + 9 + 6 + length_crys_hist(6)
+     &      + length_crys_hist(7) + 5 + 5 
+     &      + length_crys_hist(10) + length_crys_hist(11))
+      if( num_states_here .ne. max_cp_states_values ) then
+         write(iout,9030) 1
+         call die_gracefully
+      end if
+c
+c              1. 21+nslip common values not for a specific crystal
+c                  a. -curl(Fe^-1) psuedo Nye tensor (3x3)
+c                       gradFe (3x3x3) averaged over all element
+c                       integration points then 3x3 Nye computed
+c                  b. R(3,3) from F = R U
+c                  c. work density (1x1)
+c                  d. plastic work density (1x1
+c                  e. equiv eps-pls (1x1
+c                  f. slip history: sum over time of (signed) plastic
+c                     slip on each slip system. Makes sense for material
+c                     w/ 1 crystal - slip on on a system is summed for
+c                     each crystal then averaged w/o accounting for
+c                     crystal orientations (max_slip_sys x1)
+
+c         **   2. for each crystal:
+c                  a. unrotated cauchy stress (6x1)
+c                  b. updated Euler angles (3x1)
+c                  c. Rp (3x3)
+c                  d. elastic lattice strain (6x1)
+c                  e. current increment each slip sys (max_slip_sys x 1)
+c                  f. tau_tilde (max_uhard x 1)
+c                  g. user hardening variables (each 1 value))
+c                      (1) time OR tau_y [tau_y for MTS model]
+c                      (2) mu_harden [mu_harden for MTS model]
+c                      (3) max slip rate over all systems
+c                      (4) system w/ max rate
+c                      (5) # systems w/ rate >= 0.1*max_rate
+c                      (6) equivalent creep strain rate
+c                      (7) effective Norton exponent n
+c                      (8) effective_Norton_stress
+c                      (9) effective Norton B value
+c                      (10) equivalent diffusion strain rate
+c                  h. cp strain rate (6 x 1)
+c                  i. diffusion strain rate (6 x 1)
+c
+c         **   values are averages computed over all integration points
+c 
+      s = 0
+      state_labels(s+1) = "nye-11"    
+      state_labels(s+2) = "nye-21"    
+      state_labels(s+3) = "nye-31"    
+      state_labels(s+4) = "nye-12"    
+      state_labels(s+5) = "nye-22"    
+      state_labels(s+6) = "nye-32"    
+      state_labels(s+7) = "nye-13"    
+      state_labels(s+8) = "nye-23"    
+      state_labels(s+9) = "nye-33" 
+      state_descriptors(s+1) = "pseudo Nye tensor"         
+      s = s + 9
+c
+      state_labels(s+1) = "R-11"
+      state_labels(s+2) = "R-21"
+      state_labels(s+3) = "R-31"
+      state_labels(s+4) = "R-12"
+      state_labels(s+5) = "R-22"
+      state_labels(s+6) = "R-32"
+      state_labels(s+7) = "R-13"
+      state_labels(s+8) = "R-23"
+      state_labels(s+9) = "R-33"
+      state_descriptors(s+1) = "R of RU rotation"
+      s = s + 9
+c
+      state_labels(s+1) = "U-total"
+      state_labels(s+2) = "U-plast"
+      state_labels(s+3) = "eq-epspl"
+      state_descriptors(s+1) = "total work density"
+      state_descriptors(s+2) = "plastic work density"
+      state_descriptors(s+3) = "equiv plastic eps"
+      s = s + 3
+c
+      do i = 1, length_comm_hist(5) 
+         write(state_labels(s+i), 9000) i
+      end do
+      state_descriptors(s+1) = "integrated slp  ea sys"      
+      s = s + length_comm_hist(5) 
+c
+      if( s .ne. (21 + length_comm_hist(5)) ) then
+        write(iout,9030) 2
+        call die_gracefully
+      end if
+c
+c              nterms_crystal_list will = 1 or the maximum number of
+c              crystals used in all the CP materials of the FE  model
+c
+      do nc = 1, nterms_crystal_list
+c
+         cry_id = crystal_list(nc)
+         write(crystal_id,fmt="(i4.4)") cry_id
+c
+         state_labels(s+1) = "ur1-" // crystal_id
+         state_labels(s+2) = "ur2-" // crystal_id
+         state_labels(s+3) = "ur3-" // crystal_id
+         state_labels(s+4) = "ur4-" // crystal_id
+         state_labels(s+5) = "ur5-" // crystal_id
+         state_labels(s+6) = "ur6-" // crystal_id
+         state_descriptors(s+1) = "urot c sig " // "cry # " 
+     &    // crystal_id
+         state_descriptors(s+2:s+6) = " "
+         s = s + 6
+c
+         state_labels(s+1) = "EA1-" // crystal_id
+         state_labels(s+2) = "EA2-" // crystal_id
+         state_labels(s+3) = "EA3-" // crystal_id
+c
+         state_descriptors(s+1) =
+     &    "Eul angle- " // "cry # " // crystal_id
+         state_descriptors(s+2) = " "
+         state_descriptors(s+3) = " "
+         s = s + 3
+c
+         state_labels(s+1) = "p11-" // crystal_id
+         state_labels(s+2) = "p21-" // crystal_id
+         state_labels(s+3) = "p31-" // crystal_id
+         state_labels(s+4) = "p12-" // crystal_id
+         state_labels(s+5) = "p22-" // crystal_id
+         state_labels(s+6) = "p32-" // crystal_id
+         state_labels(s+7) = "p13-" // crystal_id
+         state_labels(s+8) = "p23-" // crystal_id
+         state_labels(s+9) = "p33-" // crystal_id
+         state_descriptors(s+1) = "pls rot cry # " // crystal_id
+         s = s + 9
+c
+         state_labels(s+1) = "e11-" // crystal_id
+         state_labels(s+2) = "e22-" // crystal_id
+         state_labels(s+3) = "e33-" // crystal_id
+         state_labels(s+4) = "e13-" // crystal_id
+         state_labels(s+5) = "e23-" // crystal_id
+         state_labels(s+6) = "e12-" // crystal_id
+         state_descriptors(s+1) = "latt. eps cry # " // crystal_id
+         state_descriptors(s+2:s+6) = "  "
+         s = s + 6
+c
+         do slip_sys = 1, length_crys_hist(6)
+           write(slip_sys_id,fmt="(i2.2)") slip_sys
+           state_labels(s+slip_sys) = "s" // slip_sys_id // "-"
+     &            // crystal_id
+         end do
+         state_descriptors(s+1) = "slip incr cry # " 
+     &            // crystal_id
+         s = s + length_crys_hist(6)
+c
+         do hard_no = 1, length_crys_hist(7)
+           write(hard_id,fmt="(i2.2)") hard_no
+           state_labels(s+hard_no) = "h" // hard_id // "-" 
+     &      // crystal_id
+         end do
+         state_descriptors(s+1) = "hard val cry # " 
+     &    // crystal_id         
+         s = s + length_crys_hist(7)
+c
+         state_labels(s+1) = "tty-" // crystal_id 
+         state_descriptors(s+1) = "time OR tau_y"
+         state_labels(s+2) = "muh-"  // crystal_id 
+         state_descriptors(s+2) = "MTS model mu-hard"
+         state_labels(s+3) = "msr-" // crystal_id
+         state_descriptors(s+3) = "max sl rate all sys"
+         state_labels(s+4) = "mID-" // crystal_id
+         state_descriptors(s+4) = "sys # w/ max rate"
+         state_labels(s+5) = "#ac-" // crystal_id
+         state_descriptors(s+5) = "no.sys >0.1*max_rate"
+         s = s + 5
+c
+         state_labels(s+1) = "crt-" // crystal_id 
+         state_labels(s+2) = "nef-" // crystal_id 
+         state_labels(s+3) = "sig-" // crystal_id
+         state_labels(s+4) = "Bef-" // crystal_id 
+         state_labels(s+5) = "drt-" // crystal_id 
+         state_descriptors(s+1) = "creep rate cry # " // crystal_id
+         state_descriptors(s+2) = "eff_Norton_n"
+         state_descriptors(s+3) = "eff Norton_stress"
+         state_descriptors(s+4) = "Norton_B_eff"
+         state_descriptors(s+5) = "diffus. rate"
+         s = s + 5
+c
+         state_labels(s+1) = "ep1-" // crystal_id
+         state_labels(s+2) = "ep2-" // crystal_id
+         state_labels(s+3) = "ep3-" // crystal_id
+         state_labels(s+4) = "ep4-" // crystal_id
+         state_labels(s+5) = "ep5-" // crystal_id
+         state_labels(s+6) = "ep6-" // crystal_id
+         state_descriptors(s+1) = "creep rate ten # " // crystal_id
+         state_descriptors(s+2:s+6) = "  "
+         s = s + 6
+c
+         state_labels(s+1) = "ed1-" // crystal_id
+         state_labels(s+2) = "ed2-" // crystal_id
+         state_labels(s+3) = "ed3-" // crystal_id
+         state_labels(s+4) = "ed4-" // crystal_id
+         state_labels(s+5) = "ed5-" // crystal_id
+         state_labels(s+6) = "ed6-" // crystal_id
+         state_descriptors(s+1) = "diffus. rate ten # " // crystal_id
+         state_descriptors(s+2:s+6) = "  "
+         s = s + 6
+c
+      end do
+c
+      if( s .ne. num_states_here ) then
+         write(iout,9030) 3
+         call die_gracefully
+      end if
+c
+      if( do_print ) then
+        do i = 1, num_states_here
+          write(iout,9010) i, state_labels(i), state_descriptors(i)
+        end do
+        do_print = .false.
+      end if
+c
+      return
+c
+ 9000 format("slip-",i2.2)
+ 9010 format(2x,i5,2x,a8,2x,a)
+ 9020 format("hard.-",i2.2)
+ 9030 format('>> FATAL ERROR: routine mm10_states_labels_type_7 @ ',i2,
+     & /,    '                job aborted',//)
+c
+      end subroutine mm10_states_labels_type_8
 
 c     ****************************************************************
 c     *                                                              *
