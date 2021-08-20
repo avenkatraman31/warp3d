@@ -6401,17 +6401,16 @@ c     ****************************************************************
 c
       integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G
-      double precision :: one,five
-c
-      one = 1.d0
-      five=5.d0
+      double precision,parameter :: one=1.d0,five=5.d0,four=4.d0,
+     &                              two=2.d0
+
 c
         if( s_type .eq. 9 ) then ! HCP6
 c       Parameters
 c       q matrix
       G(1:3,1:3) = five
       G(1:3,4:6) = five
-      G(4:6,1:3) = one
+      G(4:6,1:3) = two
       G(4:6,4:6) = five
 c
         elseif( s_type .eq. 10) then ! HCP18
@@ -6423,11 +6422,7 @@ c
       G(1:3,4:6) = five
       G(4:6,1:3) = one
       G(4:6,4:6) = five
-      G(1:3,1:3) = five
-      G(1:3,4:6) = five
-      G(1:3,7:18) = one
-      G(4:6,1:3) = one
-      G(4:6,4:6) = five
+      G(1:3,7:18) = two
       G(4:6,7:18) = one
       G(7:18,1:3) = one
       G(7:18,4:6) = one
@@ -6444,15 +6439,15 @@ c
       G(1:3,4:6) = five
       G(4:6,1:3) = one
       G(4:6,4:6) = five
-      G(1:3,7:18) = one
+      G(1:3,7:18) = two
       G(4:6,7:18) = one
       G(7:18,1:3) = one
       G(7:18,4:6) = one
       G(7:18,7:18) = one
-      G(1:3,19:24) = one
-      G(4:6,19:24) = one
-      G(7:18,19:24) = one         
-      G(19:24,19:24) = one
+      G(1:3,19:24) = two
+      G(4:6,19:24) = two
+      G(7:18,19:24) = one+one/five         
+      G(19:24,19:24) = one+one/five
       G(19:24,1:3) = five
       G(19:24,4:6) = five
       G(19:24,7:18) = one

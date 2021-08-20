@@ -227,7 +227,7 @@ c
 c     Twin variant and max twin volume fraction
 c
       integer :: max_twin_id
-      double precision :: max_f_twin
+      double precision :: max_f_twin,tot_f_twin
 c     
       call mm10_init_cc_props( local_work%c_props(iloop,c),
      &              local_work%angle_type(iloop),
@@ -279,6 +279,8 @@ c
 c
 c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
+c
+      tot_f_twin =abs(cc_n%u(10))/cc_props%gamma_tw
 c
       if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
 c
@@ -365,28 +367,27 @@ c          p_strain_ten -> plastic strain increment tensor
 c          n_avg -> effective creep exponent
 c
       if(cc_props%twinning .and. 
-     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2) .and.
-     &   cc_n%u(10) .lt. 9.D0*ptone) then
+     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2)) then
 c
-        sig_avg      = sig_avg + cc_np1%stress*(one-cc_n%u(10))+
-     &                           cc_np1_twin%stress*(cc_n%u(10))    ! 6x1 vector
-        tang_avg     = tang_avg + cc_np1%tangent*(one-cc_n%u(10))+
-     &                           cc_np1_twin%tangent*(cc_n%u(10))   ! 6x6 matrix
+        sig_avg      = sig_avg + cc_np1%stress*(one-tot_f_twin)+
+     &                           cc_np1_twin%stress*(tot_f_twin)    ! 6x1 vector
+        tang_avg     = tang_avg + cc_np1%tangent*(one-tot_f_twin)+
+     &                           cc_np1_twin%tangent*(tot_f_twin)   ! 6x6 matrix
         len = length_comm_hist(5)
         slip_avg(1:len) = slip_avg(1:len) + cc_np1%slip_incs(1:len)
-        t_work_inc   = t_work_inc+ cc_np1%work_inc*(one-cc_n%u(10))+
-     &                             cc_np1_twin%work_inc*(cc_n%u(10))
-        p_work_inc   = p_work_inc+ cc_np1%p_work_inc*(one-cc_n%u(10))+
-     &                             cc_np1_twin%p_work_inc*(cc_n%u(10))
+        t_work_inc   = t_work_inc+ cc_np1%work_inc*(one-tot_f_twin)+
+     &                             cc_np1_twin%work_inc*(tot_f_twin)
+        p_work_inc   = p_work_inc+ cc_np1%p_work_inc*(one-tot_f_twin)+
+     &                             cc_np1_twin%p_work_inc*(tot_f_twin)
         p_strain_inc = p_strain_inc + 
-     &                           cc_np1%p_strain_inc*(one-cc_n%u(10))+
-     &                           cc_np1_twin%p_strain_inc*(cc_n%u(10))
-        p_strain_ten = p_strain_ten + p_strain_ten_c*(one-cc_n%u(10))+
-     &                           p_strain_ten_c_twin*(cc_n%u(10))
+     &                           cc_np1%p_strain_inc*(one-tot_f_twin)+
+     &                           cc_np1_twin%p_strain_inc*(tot_f_twin)
+        p_strain_ten = p_strain_ten + p_strain_ten_c*(one-tot_f_twin)+
+     &                           p_strain_ten_c_twin*(tot_f_twin)
         n_avg        = n_avg + 
-     &              cc_np1%p_strain_inc*cc_np1%u(12)*(one-cc_n%u(10))+
+     &              cc_np1%p_strain_inc*cc_np1%u(12)*(one-tot_f_twin)+
      &              cc_np1_twin%p_strain_inc*
-     &              cc_np1_twin%u(12)*(cc_n%u(10))
+     &              cc_np1_twin%u(12)*(tot_f_twin)
 c
       else
 c
@@ -2644,18 +2645,10 @@ c ----------------------------------------------------------------------
       type(crystal_props) :: props
       double precision :: tau_tilde(size_num_hard)
       double precision, dimension(max_uhard) :: uhist
-                tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
-                tau_tilde(4:6) = props%cp_006
-c
-      if( props%s_type .eq. 10) then
-                tau_tilde(7:18) = props%cp_007
-      elseif( props%s_type .eq. 11  .or. props%s_type .eq.12 ) then
-                tau_tilde(7:18) = props%cp_007
-                tau_tilde(19:24) = props%cp_008
-      else
-          write(props%out,101) props%s_type
-          call die_gracefully
-      end if
+        tau_tilde(1:3) = props%cp_005 ! Initial g_0 (MPa)
+        tau_tilde(4:6) = props%cp_006
+        tau_tilde(7:18) = props%cp_007
+        tau_tilde(19:30) = props%cp_008
 c
       return
 c
@@ -5208,7 +5201,7 @@ c   ********************************************************************
         type(crystal_state)::np1
         type(crystal_props),intent(in)::props
         integer,intent(in)::variant
-        double precision, parameter :: thou=1.0d3
+        double precision, parameter :: thou=1.0d6
         integer :: islip
         do islip=props%n_twin_slip+1,props%nslip
             if(islip.ne.variant+18) 
