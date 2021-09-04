@@ -45,7 +45,7 @@ c
       integer :: loc_cauchy_twin, loc_euler_twin, loc_pls_R_twin, 
      &  loc_uddt_twin,loc_els_eps_twin, loc_cur_slip_incr_twin, 
      &  loc_tau_tilde_twin, loc_tt_rate_twin, loc_ep_twin, loc_ed_twin,
-     &  loc_flag_twin
+     &  loc_flag_twin,loc_flag_child
 c
 c              the top part of the history vectory contains data
 c              not dependent on the number of crystals defined

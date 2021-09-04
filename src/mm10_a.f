@@ -1516,6 +1516,9 @@ c
 c
       sh = index_crys_hist(crys_no,21,1)
       history(1,sh:sh-1+6) = np1%ed(1:6)
+c     
+      sh=index_crys_hist(crys_no,22,1)
+      history(1,sh)=np1%twinned
 c
       return
 c
@@ -2203,7 +2206,9 @@ c
       call mm10_a_zero_vec( np1%qs, 3*max_slip_sys )
       call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
 c
-c      twin flag
+c      child flag
+c
+      np1%child=zero
 c
       return
 c
@@ -2298,6 +2303,9 @@ c
       ! call mm10_a_copy_vector( np1%ms,props%ms, 6*max_slip_sys )
       ! call mm10_a_copy_vector( np1%qs, props%qs,3*max_slip_sys )
       ! call mm10_a_zero_vec( np1%qc, 3*max_slip_sys )
+c
+c
+      np1%child=one
 c
       return
 c
@@ -3213,6 +3221,8 @@ c
       sh = index_crys_hist(crys_no,22,1)
       n%twinned = history(1,sh)
 c
+      n%child = zero
+c
       return
 c
  9000 format('>> FATAL ERROR: mm10_copy_cc_hist @ ',i2 )
@@ -3315,6 +3325,8 @@ c     Twin flags
 c
       sh = index_crys_hist(crys_no,22,1)
       n%twinned = history(1,sh)
+c
+      n%child = one
 c
       return
 c

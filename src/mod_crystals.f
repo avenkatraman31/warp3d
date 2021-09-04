@@ -82,7 +82,7 @@ c
         double precision, dimension(6) :: ed, ep
         integer :: step, elem, gp, iter
         ! Twinning flags
-        integer :: twinned
+        integer :: twinned,child
       end type
 c
 c              store integer indexes into history vector for a an
