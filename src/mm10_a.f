@@ -414,9 +414,12 @@ c
 c
 c                  store the CP history for the twinned portion of the crystal
 c
-      call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
-     &                             cc_np1_twin,cc_n_twin, 
-     &                             history_np1(iloop,1) )
+      if(cc_props%twinning .and. 
+     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2)) then
+         call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
+     &                                 cc_np1_twin,cc_n_twin, 
+     &                                 history_np1(iloop,1) )
+      endif
 c
       return
 c
@@ -863,7 +866,7 @@ c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) = stress_6!zero!cc_n%stress
+      history(1,sh:eh) = stress_6!cc_n%stress!zero!
 c
 c              Store Angles at right location
 c
@@ -890,13 +893,13 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = D_6!cc_n%D
+      history(1,sh:eh) = cc_n%D!D_6!
 c
 c              eps
 c
       sh = index_crys_hist(crys_no,16,1)
       eh = index_crys_hist(crys_no,16,2)
-      history(1,sh:eh) = eps_6!cc_n%eps
+      history(1,sh:eh) = cc_n%eps!eps_6!
 c
 c              slip_incs
 c

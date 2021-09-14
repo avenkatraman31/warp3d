@@ -1964,6 +1964,7 @@ c
 c
         if(n%twinned.eq.one .and. n%child.eq.one 
      &    .and. dabs(tau).gt.tt(alpha)) then
+            print*,'tau>tt(i)'
             tau=tt(alpha)*dsign(one,tau)
         endif
 c ----------------------------------------------------------------------
