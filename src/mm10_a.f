@@ -414,12 +414,9 @@ c
 c
 c                  store the CP history for the twinned portion of the crystal
 c
-      if(cc_props%twinning .and. 
-     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2)) then
-         call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
+      call mm10_store_cryhist_twin( crys_no, span, cc_props_twin,
      &                                 cc_np1_twin,cc_n_twin, 
      &                                 history_np1(iloop,1) )
-      endif
 c
       return
 c
@@ -4498,16 +4495,18 @@ c
 c
 c           compute accumulated slip system shears
 c
+        np1%u(9) = n%u(9)
         do islip=1,props%nslip
-          np1%u(9) = n%u(9)+abs(np1%slip_incs(islip))
+          np1%u(9) = np1%u(9)+abs(np1%slip_incs(islip))
         end do
 c  
 c    Check if twinning has reached critical volume fraction
 c    Also turn off twinning if high value is reached
 c
       if( props%twinning) then
+        np1%u(10) = n%u(10)
         do islip=props%n_twin_slip+1,props%nslip
-          np1%u(10) = n%u(10)+abs(np1%slip_incs(islip))
+          np1%u(10) = np1%u(10)+abs(np1%slip_incs(islip))
         end do
         if((np1%u(10)/props%gamma_tw .gt. two*ptone**(two)) .and.
      &     (np1%u(10)/props%gamma_tw .lt. 9.d0*ptone)) then
