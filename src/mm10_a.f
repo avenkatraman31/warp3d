@@ -890,7 +890,7 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = cc_n%D!D_6!
+      history(1,sh:eh) = D_6!cc_n%D!
 c
 c              eps
 c
