@@ -931,6 +931,16 @@ c
       sh=index_crys_hist(crys_no,22,1)
       history(1,sh)=one
 c
+      sh   = index_crys_hist(crys_no,23,1)
+      eh   = index_crys_hist(crys_no,23,2)
+      len1 = eh - sh + 1
+c
+c     User variables - sh+8 is the accumulated slip on slip systems only
+c
+      history(1,sh:eh)   = zero
+      history(1,sh)=cc_n%u(1)
+      history(1,sh+8)=cc_n%u(9)-cc_n%u(10)
+c
       return
       end
 c
@@ -1519,6 +1529,15 @@ c
 c     
       sh=index_crys_hist(crys_no,22,1)
       history(1,sh)=np1%twinned
+c
+      sh   = index_crys_hist(crys_no,23,1)
+      eh   = index_crys_hist(crys_no,23,2)
+      len2 = length_crys_hist(23)
+      if( len2 .ne. eh-sh+1 ) then ! sanity check
+         write(props%out,9000) 2
+         call die_abort
+      end if
+      history(1,sh:eh) = np1%u(1:len2)
 c
       return
 c
@@ -3327,6 +3346,15 @@ c
       n%twinned = history(1,sh)
 c
       n%child = one
+c
+      sh = index_crys_hist(crys_no,23,1)
+      eh = index_crys_hist(crys_no,23,2)
+      len2 = eh - sh + 1
+      if( len2 .ne. length_crys_hist(23) ) then ! sanity check
+         write(props%out,9000) 2
+         call die_abort
+      end if
+      n%u(1:len2-1) = history(1,sh:eh)
 c
       return
 c
