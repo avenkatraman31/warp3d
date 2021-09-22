@@ -284,7 +284,7 @@ c
 c
       if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
 c
-        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
+        call mm10_a_max_vector(cc_n%u(28:33),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
@@ -863,7 +863,7 @@ c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) = stress_6!cc_n%stress!zero!
+      history(1,sh:eh) = cc_n%stress!stress_6!zero!
 c
 c              Store Angles at right location
 c
@@ -890,7 +890,7 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = D_6!cc_n%D!
+      history(1,sh:eh) = cc_n%D!D_6!
 c
 c              eps
 c
@@ -1526,9 +1526,6 @@ c
 c
       sh = index_crys_hist(crys_no,21,1)
       history(1,sh:sh-1+6) = np1%ed(1:6)
-c     
-      sh=index_crys_hist(crys_no,22,1)
-      history(1,sh)=np1%twinned
 c
       sh   = index_crys_hist(crys_no,23,1)
       eh   = index_crys_hist(crys_no,23,2)
@@ -2281,8 +2278,8 @@ c              vectors
 c
       do i = 1, 6
         np1%D(i)      = dstrain(i)
-        np1%stress(i) = zero!n%stress(i)
-        np1%eps(i)    = zero
+        np1%stress(i) = n%stress(i)!zero!
+        np1%eps(i)    = n%eps(i)!zero!
       end do
 c
       np1%euler_angles(1) = n%euler_angles(1)
@@ -2624,12 +2621,9 @@ c
       double precision, dimension(size_num_hard) :: tau_tilde
       double precision, dimension(max_uhard) :: uhist
 c
-c      initialize extended voce hardening
 c
-       call mm10_init_avoche( props, tau_tilde, uhist )
-c
-c      write(props%out,*) "Not implemented"
-c      call die_gracefully
+      write(props%out,*) "Not implemented"
+      call die_gracefully
 c
       return
       end
@@ -2676,6 +2670,8 @@ c ----------------------------------------------------------------------
         tau_tilde(4:6) = props%cp_006
         tau_tilde(7:18) = props%cp_007
         tau_tilde(19:30) = props%cp_008
+c
+        uhist(28:33)=zero
 c
       return
 c
@@ -4544,6 +4540,15 @@ c
         elseif((np1%u(10)/props%gamma_tw .gt. 9.d0*ptone)) then
             np1%twinned = 0
         endif
+      endif
+c
+c     User output to keep track of twin volume fractions for hcp24_t or 
+c     hcp24_c
+c
+      if(props%s_type .eq. 11 .or. props%s_type .eq. 12) then
+        do islip=1,6
+          np1%u(27+islip)=n%u(27+islip)+dabs(np1%slip_incs(18+islip))
+        end do
       endif
 c
       return

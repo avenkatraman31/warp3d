@@ -243,6 +243,7 @@ c                 14 -- B_eff ( 1 x 1 )
 c                 15 -- ed_dot = diffusion rate ( 1 x 1 )
 c                 16-21 -- cp strain rate tensor 6x1
 c                 22-27 -- diff strain rate tensor 6x1
+c                 28-33 -- cumulative twin volume fractions
 c
 c
 c                |<- crystal term for twinned portion of the grain** #

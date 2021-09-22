@@ -1696,11 +1696,9 @@ c
       double precision :: slipinc
       integer :: i
 c
-      call mm10_slipinc_avoche(props, np1, n, stress, tt, 
-     &                             i, slipinc)
 c
-c      write(props%out,*) "Not implemented: mm10_slipinc_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_slipinc_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1717,11 +1715,9 @@ c
       double precision, dimension(size_num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
 c
-      call mm10_h_avoche(props, np1,
-     &             n,vec1,vec2, stress, tt, h)
 c
-c      write(props%out,*) "Not implemented: mm10_h_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_h_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1740,11 +1736,9 @@ c
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
-      call mm10_estress_avoche(props,
-     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
 c
-c      write(props%out,*) "Not implemented: mm10_estress_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_estress_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1765,11 +1759,9 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 
 c
-        call mm10_ehard_avoche(props,
-     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
 c 
-c      write(props%out,*) "Not implemented: mm10_ehard_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_ehard_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1804,10 +1796,9 @@ c
       double precision, dimension(size_nslip) :: dgammadtau
       double precision, dimension(size_num_hard) :: tt
 c
-       call mm10_dgdt_avoche(props, np1, n, stress, tt, dgammadtau)
 c
-c      write(props%out,*) "Not implemented: mm10_dgdt_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_dgdt_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1825,11 +1816,9 @@ c
      &        :: dgammadtt
 c
 c
-      call mm10_dgdh_avoche(props, np1,
-     &      n, stress, tt, dgammadtt)
 c
-c      write(props%out,*) "Not implemented: mm10_dgdh_user"
-c      call die_gracefully
+      write(props%out,*) "Not implemented: mm10_dgdh_user"
+      call die_gracefully
 c
       return
       end subroutine
@@ -1962,11 +1951,10 @@ c
         dt = np1%tinc
         m_alpha=props%cp_021
 c
-        if(n%twinned.eq.one .and. n%child.eq.one 
-     &    .and. dabs(tau).gt.tt(alpha)) then
-            print*,'tau>tt(i)'
-            tau=tt(alpha)*dsign(one,tau)
-        endif
+        ! if(n%twinned.eq.one .and. n%child.eq.one 
+      ! &    .and. dabs(tau).gt.tt(alpha)) then
+            ! tau=tt(alpha)*dsign(one,tau)
+        ! endif
 c ----------------------------------------------------------------------
 c                                                                      *
 c        Setting cp_001- gamma_dot_0^prism,
