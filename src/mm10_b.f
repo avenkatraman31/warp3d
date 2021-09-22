@@ -1999,13 +1999,14 @@ c
       double precision :: dt
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot,p_slip_acc
+     &     g_s, gamma_dot, temp, g_n, g_dot,p_slip_acc,neg_p_slip_acc
 
         ! Load material parameters
         ! q=Gmat matrix is loaded at top of mm10
         
         dt = np1%tinc
-        p_slip_acc=-1.d0*n%u(9)
+        p_slip_acc=n%u(9)
+        neg_p_slip_acc=-1.d0*p_slip_acc
 c ----------------------------------------------------------------------
 c                                                                      *
 c        Setting cp_009- g_1^prism,
@@ -2022,46 +2023,64 @@ c                   cp_019- theta_1^pyrca,                             *
 c                   cp_020- theta_1^ttwin,                             *
 c ----------------------------------------------------------------------
         if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc) 
+        Hmat(1:3,1:6)=(props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:6)=(props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
 c
         elseif (props%s_type .eq. 10 ) then!HCP18
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)
+        Hmat(1:3,1:18)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:18)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
+        Hmat(7:18,1:18)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
 c
         elseif(props%s_type .eq. 11 .or. props%s_type .eq.12) then!HCP30
-        Hmat(1:3,1:24)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:24)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:24)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)    
-        Hmat(19:24,1:24)=(props%cp_012+props%cp_020)+
-     &      (props%cp_016-props%cp_020+
-     &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-     &       exp(one*props%cp_016/props%cp_012*p_slip_acc)   
+        Hmat(1:3,1:24)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))
+        Hmat(4:6,1:24)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))
+        Hmat(7:18,1:24)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
+        Hmat(19:24,1:24)=(props%cp_020+
+     &               ((props%cp_016-props%cp_020)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))+
+     &               ((props%cp_016*props%cp_020*p_slip_acc/
+     &                 props%cp_012)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))  
 c
         else ! error
            write(*,*) 'cannot use manual H matrix'
@@ -2106,7 +2125,7 @@ c
       double precision :: dt, slipinc
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, dg_s, dslip,p_slip_acc
+     &     g_s, gamma_dot, temp, dg_s, dslip,p_slip_acc,neg_p_slip_acc
       double precision, dimension(size_nslip) :: dslipinc
       integer :: slip_a, slip_b
       
@@ -2136,52 +2155,70 @@ c                   cp_019- theta_1^pyrca,                             *
 c                   cp_020- theta_1^ttwin,                             *
 c ----------------------------------------------------------------------
         if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc) 
+        Hmat(1:3,1:6)=(props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:6)=(props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
 c
         elseif (props%s_type .eq. 10 ) then!HCP18
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)
+        Hmat(1:3,1:18)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:18)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
+        Hmat(7:18,1:18)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
 c
         elseif(props%s_type .eq. 11 .or. props%s_type .eq.12) then!HCP30
-        Hmat(1:3,1:24)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       exp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:24)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       exp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:24)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       exp(one*props%cp_015/props%cp_011*p_slip_acc)    
-        Hmat(19:24,1:24)=(props%cp_012+props%cp_020)+
-     &      (props%cp_016-props%cp_020+
-     &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-     &       exp(one*props%cp_016/props%cp_012*p_slip_acc)   
+        Hmat(1:3,1:24)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))
+        Hmat(4:6,1:24)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))
+        Hmat(7:18,1:24)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
+        Hmat(19:24,1:24)=(props%cp_020+
+     &               ((props%cp_016-props%cp_020)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))+
+     &               ((props%cp_016*props%cp_020*p_slip_acc/
+     &                 props%cp_012)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))  
 c
         else ! error
            write(*,*) 'cannot use manual H matrix'
            write(*,*) 'routine mm10_h_avoche. terminate job'
            call die_gracefully
-        endif      
+        endif     
         ! Equation [5]
         ! Equation [6], g_s equation has to be modified
         do slip_a = 1,props%nslip
@@ -2221,7 +2258,7 @@ c
       double precision :: dt, slipinc, deltaij
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, dslip, dg_s,p_slip_acc
+     &     g_s, gamma_dot, temp, dslip, dg_s,p_slip_acc,neg_p_slip_acc
       double precision, dimension(size_nslip,size_num_hard)
      &        :: dslipinc
       integer :: slip_a, slip_b
@@ -2237,51 +2274,70 @@ c
         m_alpha=props%cp_021         
 c ----------------------------------------------------------------------
         if(props%s_type .eq. 9) then!HCP6
-        Hmat(1:3,1:6)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:6)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc) 
+        Hmat(1:3,1:6)=(props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:6)=(props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
 c
         elseif (props%s_type .eq. 10 ) then!HCP18
-        Hmat(1:3,1:18)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:18)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:18)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       dexp(one*props%cp_015/props%cp_011*p_slip_acc)
+        Hmat(1:3,1:18)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))   
+        Hmat(4:6,1:18)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))  
+        Hmat(7:18,1:18)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
 c
-        elseif(props%s_type .eq. 11 .or. props%s_type .eq. 12) then!HCP24_t
-        Hmat(1:3,1:24)=(props%cp_009+props%cp_017)+
-     &      (props%cp_013-props%cp_017+
-     &       props%cp_013*props%cp_017*p_slip_acc/props%cp_009)*
-     &       dexp(one*props%cp_013/props%cp_009*p_slip_acc)    
-        Hmat(4:6,1:24)=(props%cp_010+props%cp_018)+
-     &      (props%cp_014-props%cp_018+
-     &       props%cp_014*props%cp_018*p_slip_acc/props%cp_010)*
-     &       dexp(one*props%cp_014/props%cp_010*p_slip_acc)    
-        Hmat(7:18,1:24)=(props%cp_011+props%cp_019)+
-     &      (props%cp_015-props%cp_019+
-     &       props%cp_015*props%cp_019*p_slip_acc/props%cp_011)*
-     &       dexp(one*props%cp_015/props%cp_011*p_slip_acc)    
-        Hmat(19:24,1:24)=(props%cp_012+props%cp_020)+
-     &      (props%cp_016-props%cp_020+
-     &       props%cp_016*props%cp_020*p_slip_acc/props%cp_012)*
-     &       dexp(one*props%cp_016/props%cp_012*p_slip_acc)   
+        elseif(props%s_type .eq. 11 .or. props%s_type .eq.12) then!HCP30
+        Hmat(1:3,1:24)=props%cp_017+
+     &               ((props%cp_013-props%cp_017)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))+
+     &               ((props%cp_013*props%cp_017*p_slip_acc/
+     &                 props%cp_009)*
+     &                 exp(props%cp_013*neg_p_slip_acc/props%cp_009))
+        Hmat(4:6,1:24)=props%cp_018+
+     &               ((props%cp_014-props%cp_018)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))+
+     &               ((props%cp_014*props%cp_018*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_014*neg_p_slip_acc/props%cp_010))
+        Hmat(7:18,1:24)=props%cp_019+
+     &               ((props%cp_015-props%cp_016)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011))+
+     &               ((props%cp_015*props%cp_016*p_slip_acc/
+     &                 props%cp_010)*
+     &                 exp(props%cp_015*neg_p_slip_acc/props%cp_011)) 
+        Hmat(19:24,1:24)=(props%cp_020+
+     &               ((props%cp_016-props%cp_020)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))+
+     &               ((props%cp_016*props%cp_020*p_slip_acc/
+     &                 props%cp_012)*
+     &                 exp(props%cp_016*neg_p_slip_acc/props%cp_012))  
+c
         else ! error
            write(*,*) 'cannot use manual H matrix'
            write(*,*) 'routine mm10_h_avoche. terminate job'
            call die_gracefully
-        endif  
+        endif
 
         
         ! Equation [5]
