@@ -284,7 +284,7 @@ c
 c
       if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
 c
-        call mm10_a_max_vector(cc_n%u(28:33),6,
+        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
@@ -863,7 +863,7 @@ c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) = cc_n%stress!stress_6!zero!
+      history(1,sh:eh) = stress_6!cc_n%stress!zero!
 c
 c              Store Angles at right location
 c
