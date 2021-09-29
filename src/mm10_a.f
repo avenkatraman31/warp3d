@@ -863,7 +863,7 @@ c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) = stress_6!cc_n%stress!zero!
+      history(1,sh:eh) =cc_n%stress!zero! stress_6!
 c
 c              Store Angles at right location
 c
@@ -890,7 +890,7 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = cc_n%D!D_6!
+      history(1,sh:eh) = D_6!cc_n%D!
 c
 c              eps
 c
@@ -2278,8 +2278,8 @@ c              vectors
 c
       do i = 1, 6
         np1%D(i)      = dstrain(i)
-        np1%stress(i) = n%stress(i)!zero!
-        np1%eps(i)    = n%eps(i)!zero!
+        np1%stress(i) = zero!n%stress(i)!
+        np1%eps(i)    = zero!n%eps(i)!
       end do
 c
       np1%euler_angles(1) = n%euler_angles(1)
@@ -5015,12 +5015,13 @@ c
       integer :: index_i
       type(crystal_props) :: inc_props,cc_props
       double precision, dimension(3,3) :: reflection_twin,
-     &                                    temp_33,temp_33_tw
+     &                                    temp_33,temp_33_tw,
+     &                                    reflection_twin_tr
       double precision, dimension(3,3,3,3) :: stiffness,
      &                                        stiffness_tw
 c
 c
-c        get the twin reflection matrix
+c        get the twin reflection matrix and its transpose
 c
       if(inc_props%s_type .eq. 11) then
         reflection_twin(1:3,1:3)=reflection_twins_t(variant,1:3,1:3)
@@ -5030,6 +5031,8 @@ c
         write(inc_props%out,*) "Invalid slip type for twinning"
         call die_gracefully
       endif
+c
+      call mm10_a_transpose(reflection_twin,3,3,reflection_twin_tr)
 c
 c              scalars
 c
@@ -5208,7 +5211,7 @@ c
 c     Updating orientation
 c
       call mm10_a_rotate_2nd(inc_props%g,
-     &                        reflection_twin,cc_props%g)
+     &                        reflection_twin_tr,cc_props%g)
 c
 c      creating 3x3x3x3 stiffness tensor and reflecting it
 c
