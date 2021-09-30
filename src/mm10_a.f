@@ -284,7 +284,7 @@ c
 c
       if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
 c
-        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
+        call mm10_a_max_vector(cc_n%u(28:33),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
@@ -890,7 +890,7 @@ c              D
 c
       sh = index_crys_hist(crys_no,15,1)
       eh = index_crys_hist(crys_no,15,2)
-      history(1,sh:eh) = D_6!cc_n%D!
+      history(1,sh:eh) = cc_n%D!D_6!
 c
 c              eps
 c
@@ -2292,8 +2292,8 @@ c
       end do
 c
       do i = 1, max_uhard
-        np1%tau_tilde(i) = n%tau_tilde(i)
-        np1%tt_rate(i)   = n%tt_rate(i)
+        np1%tau_tilde(i) = zero
+        np1%tt_rate(i)   = zero
         np1%u(i)         = zero
       end do
 c
