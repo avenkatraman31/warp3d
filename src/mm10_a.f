@@ -220,7 +220,7 @@ c              we use some work vectors to eliminate
 c              overhead of compiler generated temporaries
 c              and to-from copying
 c
-      integer :: len, sh2, sh3, eh2, eh3
+      integer :: len, sh2, sh3, eh2, eh3,len1
       double precision :: work_vec1(9), work_vec2(6), work_gradfe(27),
      &                    work_R(9), user_initial_stresses(6)
 c
@@ -280,7 +280,7 @@ c
 c     Checking if twin volume fraction has hit critical value - 2%
 c     Instantiating cc_props_twin and history_n for twin if it has
 c
-      tot_f_twin =abs(cc_n%u(10))/cc_props%gamma_tw
+      tot_f_twin =dabs(cc_n%u(10))/cc_props%gamma_tw
 c
       if( cc_n%twinned .eq. 1  .and. cc_props%twinning) then
 c
@@ -289,7 +289,7 @@ c
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
      &              cc_props_twin )
-        call mm10_a_tt_inc_twin(cc_props,cc_np1,max_twin_id)
+        call mm10_a_tt_inc_twin(cc_props,cc_np1,max_twin_id,1)
 c
         six_plus_num_hard = 6 + cc_props_twin%num_hard
         size_num_hard     = cc_props_twin%num_hard
@@ -325,11 +325,16 @@ c
 c
       elseif(cc_n%twinned .eq. 2  .and. cc_props%twinning) then
 c
-        call mm10_a_max_vector(cc_n%slip_incs(19:24),6,
+        call mm10_a_max_vector(cc_n%u(28:33),6,
      &                        max_f_twin,max_twin_id)
         call mm10_init_cc_props_twin( cc_props,
      &              max_twin_id,
      &              cc_props_twin )
+c
+        if (tot_f_twin.ge.9.0D0*ptone) then
+          tot_f_twin=9.0D0*ptone
+          call mm10_a_tt_inc_twin(cc_props,cc_np1,max_twin_id,0)
+        endif
 c
         six_plus_num_hard = 6 + cc_props_twin%num_hard
         size_num_hard     = cc_props_twin%num_hard
@@ -366,15 +371,14 @@ c          p_strain_inc -> effective plastic increment
 c          p_strain_ten -> plastic strain increment tensor
 c          n_avg -> effective creep exponent
 c
-      if(cc_props%twinning .and. 
-     &  (cc_n%twinned .eq. 1 .or. cc_n%twinned .eq. 2)) then
+      if(cc_props%twinning .and. cc_n%twinned .ne. 0 ) then
 c
         sig_avg      = sig_avg + cc_np1%stress*(one-tot_f_twin)+
      &                           cc_np1_twin%stress*(tot_f_twin)    ! 6x1 vector
         tang_avg     = tang_avg + cc_np1%tangent*(one-tot_f_twin)+
      &                           cc_np1_twin%tangent*(tot_f_twin)   ! 6x6 matrix
-        len = length_comm_hist(5)
-        slip_avg(1:len) = slip_avg(1:len) + cc_np1%slip_incs(1:len)
+        len1 = length_comm_hist(5)
+        slip_avg(1:len1) = slip_avg(1:len1) + cc_np1%slip_incs(1:len1)
         t_work_inc   = t_work_inc+ cc_np1%work_inc*(one-tot_f_twin)+
      &                             cc_np1_twin%work_inc*(tot_f_twin)
         p_work_inc   = p_work_inc+ cc_np1%p_work_inc*(one-tot_f_twin)+
@@ -863,7 +867,7 @@ c              Stress
 c
       sh = index_crys_hist(crys_no,12,1)
       eh = index_crys_hist(crys_no,12,2)
-      history(1,sh:eh) =cc_n%stress!zero! stress_6!
+      history(1,sh:eh) =zero!cc_n%stress! stress_6!
 c
 c              Store Angles at right location
 c
@@ -4521,7 +4525,7 @@ c           compute accumulated slip system shears
 c
         np1%u(9) = n%u(9)
         do islip=1,props%nslip
-          np1%u(9) = np1%u(9)+abs(np1%slip_incs(islip))
+          np1%u(9) = np1%u(9)+dabs(np1%slip_incs(islip))
         end do
 c  
 c    Check if twinning has reached critical volume fraction
@@ -4530,15 +4534,12 @@ c
       if( props%twinning) then
         np1%u(10) = n%u(10)
         do islip=props%n_twin_slip+1,props%nslip
-          np1%u(10) = np1%u(10)+abs(np1%slip_incs(islip))
+          np1%u(10) = np1%u(10)+dabs(np1%slip_incs(islip))
         end do
-        if((np1%u(10)/props%gamma_tw .gt. two*ptone**(two)) .and.
-     &     (np1%u(10)/props%gamma_tw .lt. 9.d0*ptone)) then
+        if(np1%u(10)/props%gamma_tw .gt. two*ptone**(two)) then
             if(n%twinned .eq. 0) np1%twinned = 1
             if(n%twinned .eq. 1) np1%twinned = 2
             if(n%twinned .eq. 2) np1%twinned = 2
-        elseif((np1%u(10)/props%gamma_tw .gt. 9.d0*ptone)) then
-            np1%twinned = 0
         endif
       endif
 c
@@ -5242,24 +5243,35 @@ c
 c
 c   ********************************************************************      
 c   *                                                                  *
-c   *  Subroutine to shut off evolution of twinning in other systems   *
-c   *                                                                  *
+c   *  Subroutine to shut off evolution of twinning in other systems or*
+c   *                shut off evolution of twinning after max twin     *
+c   *                volume fraction has been reached                  *
+c   *                flag=1; shut off twinning in other twin systems   *
+c   *                flag=0; shut off twinning in active twin system   *
 c   ********************************************************************
-        subroutine mm10_a_tt_inc_twin(props,np1,variant)
+        subroutine mm10_a_tt_inc_twin(props,np1,variant,flag)
         use mm10_defs, only: crystal_state,crystal_props
         implicit none
         type(crystal_state)::np1
         type(crystal_props),intent(in)::props
-        integer,intent(in)::variant
-        double precision, parameter :: thou=1.0d6
+        integer,intent(in)::variant,flag
+        double precision, parameter :: crss=1.0d16,zero=0.d0
         integer :: islip
-        do islip=props%n_twin_slip+1,props%nslip
-            if(islip.ne.variant+18) 
-     &        np1%tau_tilde(islip)=thou*np1%tau_tilde(islip)
-        end do
+        if (flag.eq.1) then 
+          do islip=props%n_twin_slip+1,props%nslip
+            if(islip.ne.variant+props%n_twin_slip) then 
+              np1%tau_tilde(islip)=crss
+              np1%tt_rate(islip)=zero
+            endif             
+          end do
+        elseif (flag .eq. 0) then
+          do islip=props%n_twin_slip+1,props%nslip            
+            np1%tau_tilde(islip)=crss
+            np1%tt_rate(islip)=zero           
+          end do
+        endif
         return 
         end subroutine mm10_a_tt_inc_twin
-c
 c   ********************************************************************      
 c   *                                                                  *
 c   *  Subroutine conversion between 4th order tensor and 6x6 matrix   *
