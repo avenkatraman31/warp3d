@@ -1951,10 +1951,10 @@ c
         dt = np1%tinc
         m_alpha=props%cp_021
 c
-        if(n%twinned.eq.one .and. n%child.eq.one 
-     &    .and. dabs(tau).gt.tt(alpha)) then
-            tau=tt(alpha)*dsign(one,tau)
-        endif
+        ! if(n%twinned.eq.one .and. n%child.eq.one 
+      ! &    .and. dabs(tau).gt.tt(alpha)) then
+            ! tau=tt(alpha)*dsign(one,tau)
+        ! endif
 c ----------------------------------------------------------------------
 c                                                                      *
 c        Setting cp_001- gamma_dot_0^prism,
