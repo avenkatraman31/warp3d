@@ -378,7 +378,9 @@ c
         tang_avg     = tang_avg + cc_np1%tangent*(one-tot_f_twin)+
      &                           cc_np1_twin%tangent*(tot_f_twin)   ! 6x6 matrix
         len1 = length_comm_hist(5)
-        slip_avg(1:len1) = slip_avg(1:len1) + cc_np1%slip_incs(1:len1)
+        slip_avg(1:len1) = slip_avg(1:len1)+     
+     &                     cc_np1%slip_incs(1:len1)*(one-tot_f_twin)+
+     &                     cc_np1_twin%slip_incs(1:len1)*(tot_f_twin) 
         t_work_inc   = t_work_inc+ cc_np1%work_inc*(one-tot_f_twin)+
      &                             cc_np1_twin%work_inc*(tot_f_twin)
         p_work_inc   = p_work_inc+ cc_np1%p_work_inc*(one-tot_f_twin)+
